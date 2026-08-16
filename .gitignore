@@ -1,0 +1,7 @@
+node_modules
+.agents
+.opencode
+.pnpm-store
+.env
+.agents
+.impeccable

@@ -1,0 +1,37 @@
+{
+	"name": "spiceey-server",
+	"version": "1.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "tsx --watch src/index.ts",
+		"start": "node dist/index.js",
+		"build": "tsc",
+		"db:push": "drizzle-kit push",
+		"db:generate": "drizzle-kit generate",
+		"db:studio": "drizzle-kit studio",
+		"db:migrate": "drizzle-kit migrate",
+		"db:start": "docker compose up -d",
+		"db:watch": "docker compose up",
+		"db:stop": "docker compose stop",
+		"db:down": "docker compose down"
+	},
+	"dependencies": {
+		"better-auth": "1.6.29",
+		"cloudinary": "^2.5.0",
+		"cors": "^2.8.5",
+		"dotenv": "^17.4.2",
+		"drizzle-orm": "0.45.2",
+		"express": "^5.2.1",
+		"pg": "^8.23.0",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@types/cors": "^2.8.17",
+		"@types/express": "^5.0.6",
+		"@types/node": "^26.2.0",
+		"@types/pg": "^8.21.0",
+		"drizzle-kit": "0.31.10",
+		"tsx": "^4.23.12",
+		"typescript": "^5.6.0"
+	}
+}

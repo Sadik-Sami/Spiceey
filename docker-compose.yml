@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: spiceey-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spiceey
+      POSTGRES_PASSWORD: spiceey
+      POSTGRES_DB: spiceey
+    ports:
+      - "5432:5432"
+    volumes:
+      - spiceey-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spiceey -d spiceey"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: spiceey-server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://spiceey:spiceey@db:5432/spiceey
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: http://localhost:4000
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      CLOUDINARY_UPLOAD_FOLDER: spiceey
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      SERVER_URL: http://localhost:4000
+      CLIENT_URL: http://localhost:3000
+    ports:
+      - "4000:4000"
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: spiceey-client
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      NEXT_PUBLIC_SERVER_URL: http://localhost:4000
+    ports:
+      - "3000:3000"
+
+volumes:
+  spiceey-db-data:

@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: spiceey-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spiceey
+      POSTGRES_PASSWORD: spiceey
+      POSTGRES_DB: spiceey
+    ports:
+      - "5432:5432"
+    volumes:
+      - spiceey-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spiceey -d spiceey"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  spiceey-db-data:
