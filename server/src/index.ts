@@ -1,21 +1,28 @@
-import { env } from "./env.js";
+import { env } from "@/env";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "@/auth";
 
 const app = express();
 const PORT = env.PORT;
 
-// Middleware
+// ─── Middleware ────────────────────────────────────────────────────────────────
 app.use(
   cors({
     origin: env.CLIENT_URL,
     credentials: true,
-  })
+  }),
 );
+
+// Better Auth handler MUST be mounted before express.json() — it needs the
+// raw request body. Mounting after json() causes auth routes to hang forever.
+app.all("/api/auth/*splat", toNodeHandler(auth));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Root endpoint
+// ─── Root ──────────────────────────────────────────────────────────────────────
 app.get("/", (req: Request, res: Response) => {
   res.json({
     success: true,
@@ -26,7 +33,7 @@ app.get("/", (req: Request, res: Response) => {
   });
 });
 
-// Health check endpoint
+// ─── Health ────────────────────────────────────────────────────────────────────
 app.get("/api/health", (req: Request, res: Response) => {
   res.json({
     success: true,
@@ -38,7 +45,7 @@ app.get("/api/health", (req: Request, res: Response) => {
   });
 });
 
-// Global error handler (Express v5)
+// ─── Global error handler (Express v5) ─────────────────────────────────────────
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error("[Global Error]", err);
   res.status(500).json({

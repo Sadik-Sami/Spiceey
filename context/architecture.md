@@ -684,12 +684,85 @@ Categories are implemented as PostgreSQL enums with metadata:
 
 ### Users (Owned by Better Auth)
 
-Better Auth's `drizzleAdapter` creates and owns the `user` and `session` tables. Do NOT declare a hand-rolled `users` table in schema.ts — it collides with the adapter's schema.
+Better Auth's `drizzleAdapter` creates and owns the schema for `user`, `session`, `account`, and `verification`. The full set lives in `server/src/db/schema/users.ts` (single auth file, barrel-exported from `index.ts`) and is regenerated via `@better-auth/cli generate` (see `context/library-docs.md` for the reconcile steps). All four tables are explicitly passed to the adapter via `drizzleAdapter(db, { schema: { user, session, account, verification } })`.
 
-- Custom fields are declared as `additionalFields` in the Better Auth config:
-  `phone: { type: "string", required: false }` (Bangladesh phone, unique via application check) and `role: { type: "string", defaultValue: "customer" }` (values: 'customer' / 'admin' / 'super_admin').
-- `email`, `emailVerified`, `createdAt`, `updatedAt` are managed by Better Auth — never redeclared.
-- Read role/phone through `auth.api.getSession()`. Model them in Drizzle only if relational queries genuinely need them.
+Custom fields are declared as `additionalFields` in the Better Auth config:
+
+- `phone: { type: "string", required: false }` — Bangladesh phone, **no DB-level unique constraint** (handled in application-level Zod validation).
+- `role: { type: "string", defaultValue: "customer", input: false }` — values: `'customer' / 'admin' / 'super_admin'`. `input: false` blocks users from setting their own role at signup; only the server can promote.
+
+`name`, `email`, `emailVerified`, `createdAt`, `updatedAt` are Better Auth core — never redeclared. `additionalFields` only adds; it does not remove.
+
+### Locked Better Auth configuration (`server/src/auth/index.ts`)
+
+```ts
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { db } from "../db";
+import { env } from "../env";
+import * as schema from "../db/schema";
+
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema: {
+      user: schema.user,
+      session: schema.session,
+      account: schema.account,
+      verification: schema.verification,
+    },
+  }),
+  secret: env.BETTER_AUTH_SECRET,
+  baseURL: env.BETTER_AUTH_URL,
+  emailAndPassword: { enabled: true, requireEmailVerification: false },
+  // Google OAuth only registered if both env vars are set
+  ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && {
+    socialProviders: {
+      google: {
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+      },
+    },
+  }),
+  user: {
+    additionalFields: {
+      phone: { type: "string", required: false },
+      role: { type: "string", defaultValue: "customer", input: false },
+    },
+  },
+  session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
+  advanced: {
+    database: { generateId: "uuid" },        // matches architecture's UUID convention
+    useSecureCookies: env.NODE_ENV === "production",
+  },
+  trustedOrigins: [env.CLIENT_URL],          // explicit allowlist (more secure than disableOriginCheck)
+  rateLimit: { enabled: true },
+});
+
+export type User = typeof auth.$Infer.Session.user;
+export type Session = typeof auth.$Infer.Session.session;
+```
+
+### Express type augmentation (`server/src/types/express.d.ts`)
+
+`req.user` and `req.session` are typed globally so auth/RBAC middleware can populate them without `any` and controllers can read them without casts:
+
+```ts
+import type { User, Session } from "../auth/index.js";
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+      session?: Session;
+    }
+  }
+}
+
+export {};
+```
+
+Both fields are optional — set by `auth.middleware.ts` (task 04) only when a valid session exists. RBAC middleware asserts presence before checking `req.user.role`. Controllers null-check before reading (no `requireUser()` helper in V1 — keep it explicit).
 
 ### User Avatars
 

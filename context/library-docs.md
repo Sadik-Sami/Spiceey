@@ -169,93 +169,153 @@ router.delete("/destroy/:publicId", async (req, res) => {
 
 **Check first:** Check AGENTS.md for an installed Better Auth skill. If a Better Auth MCP server is configured — use it.
 
-### Server Setup
+### Server Setup (`server/src/auth/index.ts`)
+
+The actual implemented config:
 
 ```typescript
-// server/src/auth/index.ts
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "../db";
+import { db } from "../db/index.js";
+import { env } from "../env.js";
+import * as schema from "../db/schema/index.js";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
+    schema: {
+      user: schema.user,
+      session: schema.session,
+      account: schema.account,
+      verification: schema.verification,
+    },
   }),
+  secret: env.BETTER_AUTH_SECRET,
+  baseURL: env.BETTER_AUTH_URL,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
   },
-  socialProviders: {
-    google: {
-      clientId: env.GOOGLE_CLIENT_ID!,
-      clientSecret: env.GOOGLE_CLIENT_SECRET!,
+  // Google OAuth only registered if both env vars are set
+  ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && {
+    socialProviders: {
+      google: {
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+      },
+    },
+  }),
+  user: {
+    additionalFields: {
+      phone: { type: "string", required: false },
+      role: { type: "string", defaultValue: "customer", input: false },
     },
   },
-  secret: env.BETTER_AUTH_SECRET,
-  baseURL: env.BETTER_AUTH_URL,
+  session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
   advanced: {
-    disableOriginCheck: process.env.NODE_ENV !== "production",
+    database: { generateId: "uuid" },                  // matches architecture's UUID convention
+    useSecureCookies: env.NODE_ENV === "production",
+    ipAddress: {
+      ipAddressHeaders: ["x-forwarded-for", "x-real-ip", "cf-connecting-ip"],
+      trustedProxies: env.TRUSTED_PROXIES?.split(",").map(s => s.trim()).filter(Boolean) ?? [],
+    },
   },
+  trustedOrigins: [env.CLIENT_URL],                     // explicit allowlist (more secure than disableOriginCheck)
+  rateLimit: { enabled: true },
 });
+
+export type User = typeof auth.$Infer.Session.user;
+export type Session = typeof auth.$Infer.Session.session;
 ```
 
-### Express Mount
+### Schema generation (`@better-auth/cli`)
+
+The schema is canonical and lives in `server/src/db/schema/users.ts`. Regenerate after any addition/change to the Better Auth config:
+
+```bash
+pnpm dlx @better-auth/cli@latest generate \
+  --config src/auth/index.ts \
+  --output src/db/schema/users.ts \
+  -y
+```
+
+After regeneration, reconcile against architecture conventions:
+
+| Convention | CLI default | Architecture |
+|---|---|---|
+| Primary keys | `uuid("id")` + `pg_catalog.gen_random_uuid()` | keep ✓ |
+| Timestamps | `timestamp("...")` | `timestamp("...", { withTimezone: true })` (timestamptz) |
+| `user.email` | unique via `.unique()` | keep — convert to explicit `uniqueIndex("user_email_idx")` for naming consistency |
+| `session.userId` / `account.userId` | regular `index()` | keep — a user has many sessions/accounts |
+| `account(providerId, accountId)` | not unique | add `uniqueIndex("account_provider_account_idx")` — account linking integrity |
+| `role` | `text("role").default("customer")` | make `.notNull().default("customer")` |
+| `phone` | `text("phone")` | keep — no DB-level unique (app-side Zod) |
+
+### Express Mount (`server/src/index.ts`)
 
 ```typescript
-// server/src/index.ts
-import { auth } from "./auth";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./auth/index.js";
 
-// Mount BEFORE express.json()
-app.all("/api/auth/*", (req, res) => auth.handler(req, res));
+// Mount BEFORE express.json() — Better Auth needs the raw request stream.
+app.all("/api/auth/*splat", toNodeHandler(auth));
 
-// Then body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 ```
 
-**Critical:** Better Auth must be mounted before `express.json()`. Better Auth needs access to the raw request stream. If `express.json()` runs first, auth routes will hang forever.
+**Critical:** Better Auth must be mounted before `express.json()`. If body-parser runs first, auth routes hang forever.
 
-### Client Setup
+**Express v5 wildcard syntax:** Express 5 ships with `path-to-regexp@8`, which dropped the unnamed `*` wildcard. Use `*splat` (or any `*name`) instead. The bare `/api/auth/*` throws `PathError: Missing parameter name` at boot.
+
+### Express Type Augmentation (`server/src/types/express.d.ts`)
+
+`req.user` and `req.session` are typed globally so auth/RBAC middleware can populate them and controllers can read them without `any` or casts:
 
 ```typescript
-// client/lib/auth-client.ts
-import { createAuthClient } from "better-auth/react";
+import type { User, Session } from "../auth/index.js";
 
-export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_SERVER_URL,
-});
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+      session?: Session;
+    }
+  }
+}
 
-// Usage in components:
-// const { data: session } = authClient.useSession();
-// const { signIn, signUp, signOut } = authClient;
+export {};
 ```
+
+- `import type` → no runtime cost, tree-shakeable
+- `declare global` → merges into `Express.Request` (already declared in `@types/express-serve-static-core`)
+- `export {}` → forces module mode so `declare global` is honored
+- Picked up automatically when `auth/index.ts` is in the TS project root
+
+Both fields are optional. `auth.middleware.ts` (task 04) sets them only when a valid session exists. RBAC middleware asserts `req.user` before reading `req.user.role`. Controllers null-check before reading.
 
 ### Getting Session (Server-Side)
 
 ```typescript
-// In any Express controller
-const session = await auth.api.getSession({
-  headers: req.headers,
-});
-
+const session = await auth.api.getSession({ headers: req.headers });
 if (!session) {
-  return res.status(401).json({ success: false, error: "Unauthorized" });
+  return res.status(401).json({ success: false, error: { code: "UNAUTHORIZED", message: "Unauthorized" } });
 }
-
-// session.user has: id, email, name, role, etc.
+// session.user.id, session.user.role, session.user.phone — all typed
 ```
 
-### Auth Middleware
+### Auth Middleware (sketch — task 04)
 
 ```typescript
 // server/src/middleware/auth.middleware.ts
-import { auth } from "../auth";
+import { auth } from "../auth/index.js";
 
-export async function authMiddleware(req, res, next) {
+export async function authMiddleware(req: Request, _res: Response, next: NextFunction) {
   try {
     const session = await auth.api.getSession({ headers: req.headers });
     if (session) {
       req.user = session.user;
+      req.session = session.session;
     }
     next();
   } catch (error) {
@@ -264,17 +324,17 @@ export async function authMiddleware(req, res, next) {
 }
 ```
 
-### RBAC Middleware
+### RBAC Middleware (sketch — task 04)
 
 ```typescript
 // server/src/middleware/rbac.middleware.ts
-export function requireRole(roles: string[]) {
-  return (req, res, next) => {
+export function requireRole(roles: Array<User["role"]>) {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
-      return res.status(401).json({ success: false, error: "Unauthorized" });
+      return res.status(401).json({ success: false, error: { code: "UNAUTHORIZED", message: "Unauthorized" } });
     }
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ success: false, error: "Forbidden" });
+      return res.status(403).json({ success: false, error: { code: "FORBIDDEN", message: "Forbidden" } });
     }
     next();
   };
@@ -284,13 +344,30 @@ export function requireRole(roles: string[]) {
 // router.get("/admin/orders", authMiddleware, requireRole(["admin", "super_admin"]), getOrders);
 ```
 
+### Client Setup (later — frontend task)
+
+```typescript
+// client/lib/auth-client.ts
+import { createAuthClient } from "better-auth/react";
+
+export const authClient = createAuthClient({
+  baseURL: process.env.NEXT_PUBLIC_SERVER_URL,
+});
+
+// Usage in Client Components:
+// const { data: session } = authClient.useSession();
+// const { signIn, signUp, signOut } = authClient;
+```
+
 **Rules:**
 
 - Better Auth runs entirely on Express — the frontend never handles tokens directly
 - Mount auth handler before `express.json()` — order is critical
-- Use `disableOriginCheck` in development only (Postman/curl testing)
-- Session cookie is httpOnly, secure, sameSite=lax
-- Custom fields (`phone`, `role`: 'customer' / 'admin' / 'super_admin') are declared as `additionalFields` in the Better Auth config — the adapter owns the user table. Never declare a hand-rolled `users` table.
+- Use `trustedOrigins: [env.CLIENT_URL]` (not `disableOriginCheck`) — explicit allowlist is more secure and works the same in dev
+- Session cookie is httpOnly, secure in production, sameSite=lax
+- Custom fields (`phone`, `role`) are declared as `additionalFields` — the adapter owns the user table. Never declare a hand-rolled `users` table.
+- `role` field uses `input: false` to prevent users from setting their own role at signup
+- `advanced.database.generateId: "uuid"` ensures Better Auth uses UUIDs (matches architecture convention)
 - Always use `auth.api.getSession({ headers: req.headers })` to validate sessions server-side
 - The auth client on the frontend uses React hooks — only in Client Components
 

@@ -65,26 +65,26 @@ Discipline: never run two enhancement commands on the same surface in one pass. 
 
 **Retired (do not use):** `bencium-innovative-ux-designer` (redundant with impact-designer), `design-taste-frontend-v1` (superseded by v2), `redesign-existing-projects` (not a greenfield tool), `stitch-design-taste` (Google Stitch-specific).
 
-### C. Planning & Architecture
+### C. The Engineering Workflow (Feature Loop)
 
-- **`/scope`** — Use when starting a new major feature to plan and update the living scope in `docs/scope/`.
-- **`/architect`** — Use before implementing complex backend services, data structures, or making load-bearing technical decisions.
+We follow the JS Mastery Engineering Workflow. State lives in files (`docs/scope/`, `docs/specs/`, `AGENTS.md`, tests), not in chat memory, ensuring work survives across sessions.
 
-### D. Implementation & Coding
+**The standard feature loop:**
+`idea → /scope → /architect → /develop → /check verify → /test → /check review → /document → /sync`
 
-- **`/develop`** — Use for standard feature implementation (UI or backend) following the specs. UI builds run under design-taste-frontend + ui-rules.md/ui-tokens.md constraints.
-- **`ponytail` (Full Mode)** — Emphasize the "lazy senior developer" approach for backend/logic: write minimal, efficient code, reuse standard libraries, and aggressively avoid over-engineering. YAGNI applies heavily.
+- **`/audit`** — Run on an existing codebase to seed or update context files (`AGENTS.md`). For greenfield, run it *after* scaffolding the project stack.
+- **`/scope`** — Run when starting a new product, or planning the next slice. Turns an idea into a living, coarse plan of what to build, in order, inside `docs/scope/`.
+- **`/architect`** — Run when a load-bearing choice is unmade (data model, provider, page design) or if `/develop` says a decision is owed. Runs a deep design conversation and writes it as a build spec in `docs/specs/`.
+- **`/develop`** — Run to build a feature (UI or backend) from its spec, run migrations, and advance the scope. **Gate:** It gates to `/architect` if a design is owed. UI builds run under `design-taste-frontend` + `ui-rules.md`/`ui-tokens.md` constraints. (For backend/logic, emphasize the "lazy senior developer" approach via `ponytail` Mode).
+- **`/check`** — Run to confirm a change. Use `/check verify` after `/develop` to run the real app and prove the feature works against the spec. Use `/check review` before a PR for a senior review on a different model.
+- **`/test`** — Run to write a senior test suite for your uncommitted change after building a feature or fixing a bug.
+- **`/document`** — Run to write human-facing prose (PR body, changelog, release note, postmortem) from the real diff when a change needs writing up.
+- **`/sync`** — Run as the absolute last step around merge. Reconciles `AGENTS.md`, the scope, and spec statuses to what the repo now shows.
+- **`/debug`** — Run anytime something is failing, throwing, or behaving wrong. Finds and fixes the root cause, then hands a regression test to `/test`.
+
+### D. Custom AI Assistants & APIs
+
 - **`context7-mcp`** — **Always** use this when implementing `motion/react`, `Next.js 16 (proxy.ts)`, `Drizzle`, or `Better Auth` to pull the latest syntax and avoid hallucinating deprecated APIs.
-
-### E. Verification & Debugging
-
-- **`/check`** — Run after completing a UI component to verify it matches the design system, animations, and specs in `ui-rules.md` and `ui-tokens.md`. Impeccable's `audit` + `critique` run before `/check` as the standard UI verification.
-- **`/test`** — Run to generate tests for backend services, complex utilities, or edge cases.
-- **`/debug`** — Use strictly for finding the root cause of a failing test, a broken UI behavior, or a persistent issue.
-
-### F. State Management & Documentation
-
-- **`/sync`** — Run as the final step after a feature is completed to update root documentation, reconcile scope, and flag stale specs.
+- **`ponytail` (Full Mode)** — Emphasize the "lazy senior developer" approach for backend/logic: write minimal, efficient code, reuse standard libraries, and aggressively avoid over-engineering. YAGNI applies heavily.
 - **`/imprint`** — Run after finalizing a unique UI pattern so it can be captured and reused consistently later.
-- **`/document`** — Use for writing human-facing prose about a change (changelogs, release notes).
-- **`impeccable document` / `extract`** — Handle DESIGN.md generation and token/component extraction into the design system.
+- **`impeccable document` / `extract`** — Handle `DESIGN.md` generation and token/component extraction into the design system.

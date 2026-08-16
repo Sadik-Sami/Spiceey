@@ -330,17 +330,21 @@ All environment variables defined in `.env.example`. Never hardcode any key, URL
 
 ## Import Aliases
 
-Always use the `@/` alias — never use relative imports that go up more than one level.
+Always use the `@/` alias for all internal imports — never use relative imports. The `@/` alias points directly to the `src/` directory.
 
 ```typescript
 // Correct
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@/lib/api-client";
 import { useCartStore } from "@/stores/cart-store";
+import { db } from "@/db";
 
 // Never
 import { Button } from "../../../components/ui/button";
+import { db } from "../db/index.js";
 ```
+
+The project uses `tsc-alias` during the build step to rewrite these aliases into Node.js-compatible relative imports with `.js` extensions. You do **not** need to include `.js` extensions when writing your code.
 
 ---
 

@@ -7,7 +7,7 @@ Update this file after every completed feature. Any AI agent reading this should
 ## Current Status
 
 **Phase:** Phase 1 — Foundation
-**Last completed:** Project Setup & Context Definitions
+**Last completed:** Better Auth Express Setup (instance + schemas + global types)
 **Next:** 01 Homepage — Navbar & Mobile Menu
 
 ---
@@ -29,7 +29,7 @@ Update this file after every completed feature. Any AI agent reading this should
 
 **02 Authentication**
 - [ ] Login & Register Page UIs
-- [ ] Better Auth Express Setup
+- [x] Better Auth Express Setup
 - [ ] API Routes (sign-in, sign-up, session, sign-out)
 - [ ] Zustand Auth Store
 
@@ -149,6 +149,14 @@ _Add decisions here as they are made during implementation._
 - **Design System:** Burnt Sienna Committed palette (#BE5428 light / #D96C3C dark fields) — one committed accent, 30-40% surface coverage. Bricolage Grotesque (display) + Schibsted Grotesk (body) via next/font/google. Implemented in Tailwind v4 `@theme` in `app/globals.css`.
 - **Motion:** Motion library (`motion/react`) for scroll-reveals, spring hover/tap physics, and layout animations from the start. All animations gated behind `useReducedMotion()`.
 - **Auth:** Better Auth 1.6.29 runs on Express; httpOnly session cookies; `proxy.ts` does optimistic cookie-only checks (no per-route fetch).
+- **Auth IDs:** `advanced.database.generateId: "uuid"` — Better Auth uses UUIDs to match the rest of the schema (otherwise default is short custom strings).
+- **Auth origins:** `trustedOrigins: [env.CLIENT_URL]` instead of `disableOriginCheck` — explicit allowlist is just as easy in dev and stops "trust everything" footguns in staging.
+- **Auth custom fields:** `phone` (optional, no DB-level unique — handled by app-level Zod) + `role` (`defaultValue: "customer"`, `input: false` so users can't self-promote).
+- **Auth schema location:** All 4 Better Auth tables (user, session, account, verification) live in `server/src/db/schema/users.ts` and are regenerated via `@better-auth/cli generate`. Reconciled against architecture conventions (timestamptz, explicit named indexes, role NOT NULL default 'customer').
+- **Auth mount (Express v5):** `app.all("/api/auth/*splat", toNodeHandler(auth))` — Express 5 ships with `path-to-regexp@8` which dropped the unnamed `*` wildcard. Bare `/api/auth/*` throws `PathError: Missing parameter name` at boot.
+- **Express types:** `server/src/types/express.d.ts` augments `Express.Request` with optional `user`/`session` (typed via `auth.$Infer.Session`). Auth middleware sets, RBAC asserts, controllers null-check — no `requireUser()` helper in V1.
+- **Path Aliases & Imports:** Switched to `moduleResolution: "bundler"` and added `tsc-alias -f` to the build step. We now use `@/` path aliases everywhere in `src/` without ugly `.js` extensions. The build step automatically resolves and appends the `.js` extensions needed for ESM production runtime.
+- **Rate Limiting & IP Tracking:** Resolved Better Auth's shared-bucket fallback warning. Added `advanced.ipAddress` config (headers: `x-forwarded-for`, `x-real-ip`, etc.) and `trustedProxies` via env. Also added `NODE_ENV=development` to `.env` so local dev correctly falls back to `127.0.0.1` instead of triggering a rate-limit warning.
 - **ORM:** Drizzle ORM 0.45.2 (stable line) on PostgreSQL 17; integer BDT money; `SELECT ... FOR UPDATE` + guarded atomic UPDATE for stock reservation.
 
 ---
