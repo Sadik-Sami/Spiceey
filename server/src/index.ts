@@ -1,14 +1,14 @@
-import "dotenv/config";
+import { env } from "./env.js";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = env.PORT;
 
 // Middleware
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: env.CLIENT_URL,
     credentials: true,
   })
 );

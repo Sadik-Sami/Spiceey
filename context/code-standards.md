@@ -307,6 +307,8 @@ All reviews are created with `status: 'pending'` by default.
 
 All environment variables defined in `.env.example`. Never hardcode any key, URL, or secret anywhere in the codebase.
 
+**Server Environment:** In the backend, environment variables are managed and strictly validated using `@t3-oss/env-core` in `server/src/env.ts`. **Never use `process.env` directly in server files.** Always import the validated `env` object from `src/env.ts`.
+
 | Variable | Used In | Is Secret |
 |----------|---------|-----------|
 | `DATABASE_URL` | server/db/index.ts | Yes |

@@ -128,7 +128,7 @@ Express v5 backend scaffold with all middleware, database connection, and route 
 
 - `server/src/index.ts` — Express app, CORS config (credentials: true, origin: client URL), JSON parser, cookie parser
 - `server/src/db/index.ts` — Drizzle ORM client with PostgreSQL driver
-- `server/src/db/schema.ts` — all table definitions (users, customers, products, productImages, productVariants, carts, orders, orderItems, orderStatusHistory, reviews, blogs, stories, coupons, announcements, shippingConfig, inventoryMovements, userAvatars)
+- `server/src/db/schema/` — modular table definitions (users, customers, products, productImages, productVariants, carts, orders, orderItems, orderStatusHistory, reviews, blogs, stories, coupons, announcements, shippingConfig, inventoryMovements, userAvatars) — barrel export in `index.ts`, relations in `relations.ts`
 - `server/src/middleware/auth.middleware.ts` — reads session cookie, validates with Better Auth, attaches `req.user`
 - `server/src/middleware/rbac.middleware.ts` — checks `req.user.role` against required roles, returns 403 if unauthorized
 - `server/src/middleware/validate.middleware.ts` — Zod schema validation for request body/query/params

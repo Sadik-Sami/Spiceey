@@ -11,6 +11,7 @@ Express 5 API for Spiceey — the backend for the Spiceey DTC ecommerce platform
 - **Cloudinary** 2.x — signed image uploads for product photos
 - **Zod** 4 — request validation
 - **TypeScript** (strict) compiled with `tsc` to `dist/`
+- **@t3-oss/env-core** — environment variable validation in `src/env.ts` (import the validated `env` object; never read `process.env` directly)
 
 ## Current Endpoints
 
@@ -28,7 +29,7 @@ src/
 └── index.ts   # App bootstrap: CORS, JSON body parsing, routes, global error handler
 ```
 
-The server is freshly scaffolded: Drizzle and Better Auth are installed and configured in `package.json` but not yet wired into the app. Database schema goes in `src/db/` when you introduce it (convention: `src/db/schema.ts` with a `drizzle.config.ts` at the server root).
+The server is freshly scaffolded: Drizzle and Better Auth are installed and configured in `package.json` but not yet wired into the app. Database schema goes in `src/db/schema/` (modular files, barrel-exported from `index.ts`) with `drizzle.config.ts` at `src/drizzle.config.ts`.
 
 ## Running Locally
 
@@ -65,7 +66,7 @@ Scripts (`pnpm run`):
 | `db:push`       | `drizzle-kit push`     | Push schema directly (prototyping only, skip for prod) |
 | `db:studio`     | `drizzle-kit studio`   | Browse/seed data in the Drizzle Studio UI |
 
-Conventions: define the schema in `src/db/schema.ts`, use `drizzle-kit generate` + `migrate` for anything that reaches production, and reserve `db:push` for throwaway prototyping.
+Conventions: define the schema in `src/db/schema/` (one file per domain, barreled via `index.ts`), use `drizzle-kit generate` + `migrate` for anything that reaches production, and reserve `db:push` for throwaway prototyping.
 
 ## Better Auth Setup
 

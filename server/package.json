@@ -6,8 +6,8 @@
 		"dev": "tsx --watch src/index.ts",
 		"start": "node dist/index.js",
 		"build": "tsc",
-		"db:push": "drizzle-kit push",
-		"db:generate": "drizzle-kit generate",
+		"db:push": "drizzle-kit push --config=./src/drizzle.config.ts",
+		"db:generate": "drizzle-kit generate --config=./src/drizzle.config.ts",
 		"db:studio": "drizzle-kit studio",
 		"db:migrate": "drizzle-kit migrate",
 		"db:start": "docker compose up -d",
@@ -16,6 +16,7 @@
 		"db:down": "docker compose down"
 	},
 	"dependencies": {
+		"@t3-oss/env-core": "^0.13.11",
 		"better-auth": "1.6.29",
 		"cloudinary": "^2.5.0",
 		"cors": "^2.8.5",

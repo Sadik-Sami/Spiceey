@@ -93,7 +93,14 @@
 │   │   ├── services/                 # Business logic layer
 │   │   ├── middleware/               # Express middleware
 │   │   ├── validators/               # Zod schemas (API contract)
-│   │   ├── db/                       # Drizzle ORM schema + client
+│   │   ├── db/
+│   │   │   ├── index.ts              # Drizzle client configuration
+│   │   │   └── schema/               # Modular Drizzle schemas
+│   │   │       ├── index.ts          # Barrel export for schemas
+│   │   │       ├── relations.ts      # Relations definitions
+│   │   │       └── *.ts              # Domain schemas (users, products, etc)
+│   │   ├── env.ts                    # Environment validation (@t3-oss/env-core)
+│   │   ├── drizzle.config.ts         # Drizzle configuration
 │   │   ├── auth/                     # Better Auth instance setup
 │   │   └── types/                    # Server-side TypeScript types
 │   ├── package.json
@@ -319,9 +326,13 @@ server/
 │   │   └── common.schema.ts
 │   ├── db/
 │   │   ├── index.ts                  # Drizzle client configuration
-│   │   ├── schema.ts                 # All Drizzle table definitions
-│   │   ├── relations.ts              # Drizzle relation definitions
-│   │   └── migrations/               # Drizzle migration files
+│   │   ├── migrations/               # Drizzle migration files
+│   │   └── schema/                   # Modular Drizzle schema
+│   │       ├── index.ts              # Barrel export for schemas
+│   │       ├── relations.ts          # All relations definitions
+│   │       └── *.ts                  # Domain specific schemas
+│   ├── env.ts                        # @t3-oss/env-core validation
+│   ├── drizzle.config.ts             # Drizzle Kit configuration
 │   ├── auth/
 │   │   └── index.ts                  # Better Auth instance setup
 │   └── types/
@@ -578,7 +589,7 @@ Production:  https://api.spiceey.com/api
 
 ### Schema Conventions (Locked — apply verbatim in task 04)
 
-These rules override the table sketches below. The Drizzle implementation in `server/src/db/schema.ts` must follow them exactly.
+These rules override the table sketches below. The Drizzle implementation in `server/src/db/schema/` (modular files, barrel-exported from `index.ts`) must follow them exactly.
 
 - **Timestamps:** every `createdAt` / `updatedAt` / `publishedAt` / `expiresAt` uses `timestamp({ withTimezone: true })` (timestamptz). Plain `timestamp` is banned.
 - **Primary keys:** `uuid("id").defaultRandom().primaryKey()` everywhere.

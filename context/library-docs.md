@@ -35,11 +35,12 @@ Never rely on general training knowledge alone for library APIs — they change 
 ```typescript
 // server/src/services/cloudinary.service.ts
 import { v2 as cloudinary } from "cloudinary";
+import { env } from "../env";
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: env.CLOUDINARY_CLOUD_NAME,
+  api_key: env.CLOUDINARY_API_KEY,
+  api_secret: env.CLOUDINARY_API_SECRET,
 });
 
 export function generateUploadSignature(folder: string) {
@@ -47,18 +48,18 @@ export function generateUploadSignature(folder: string) {
 
   const paramsToSign = {
     timestamp,
-    folder: `${process.env.CLOUDINARY_UPLOAD_FOLDER}/${folder}`,
+    folder: `${env.CLOUDINARY_UPLOAD_FOLDER}/${folder}`,
   };
 
   const signature = cloudinary.utils.api_sign_request(
     paramsToSign,
-    process.env.CLOUDINARY_API_SECRET!
+    env.CLOUDINARY_API_SECRET!
   );
 
   return {
     signature,
-    apiKey: process.env.CLOUDINARY_API_KEY,
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: env.CLOUDINARY_API_KEY,
+    cloudName: env.CLOUDINARY_CLOUD_NAME,
     timestamp,
     folder: paramsToSign.folder,
   };
@@ -186,12 +187,12 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: env.GOOGLE_CLIENT_ID!,
+      clientSecret: env.GOOGLE_CLIENT_SECRET!,
     },
   },
-  secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
+  secret: env.BETTER_AUTH_SECRET,
+  baseURL: env.BETTER_AUTH_URL,
   advanced: {
     disableOriginCheck: process.env.NODE_ENV !== "production",
   },
@@ -305,10 +306,11 @@ export function requireRole(roles: string[]) {
 // server/src/db/index.ts
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import { env } from "../env";
 import * as schema from "./schema";
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: env.DATABASE_URL,
 });
 
 export const db = drizzle(pool, { schema });
@@ -317,7 +319,7 @@ export const db = drizzle(pool, { schema });
 ### Schema Definition
 
 ```typescript
-// server/src/db/schema.ts
+// server/src/db/schema/users.ts (or the Better Auth generated schema)
 // The users table is OWNED by Better Auth's drizzleAdapter — never declare it here.
 // Custom fields are declared as additionalFields in the Better Auth config:
 //   additionalFields: {
