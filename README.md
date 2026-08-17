@@ -19,7 +19,7 @@ Spiceey is a single-brand, direct-to-consumer (DTC) ecommerce platform in Bangla
 
 | Layer    | Stack |
 |----------|-------|
-| Client   | Next.js 16 (App Router, `standalone` output), Tailwind CSS v4, Zustand 5, TanStack Query 5, Motion 13, Better Auth React client, React Hook Form, Zod, Base UI / shadcn/ui |
+| Client   | Next.js 16 (App Router, `standalone` output), Tailwind CSS v4, Zustand 5, TanStack Query 5, Motion 13, Better Auth React client, React Hook Form, Zod, Base UI / shadcn/ui, next-themes |
 | Server   | Express 5, Drizzle ORM (0.45.2), PostgreSQL 17, Better Auth (1.6.29), Cloudinary (signed uploads), Zod |
 | Infra    | Docker Compose, multi-stage Dockerfiles, pnpm 11 |
 
@@ -81,6 +81,14 @@ Authentication is powered by **Better Auth** (1.6.29) across server and client:
   - `/register` (`client/app/(auth)/register/page.tsx`): Server component with metadata, housing `RegisterForm` and `AuthShowcasePanel`. Supports full name, email, optional Bangladesh phone number format (`017XXXXXXXX`), password with confirmation match, and Google OAuth.
 - **Form Validation & Motion**: Forms use `react-hook-form` paired with `@hookform/resolvers/zod` and Zod schemas (`client/lib/validations/auth.ts`). Micro-interactions utilize shared spring/easing tokens (`client/lib/motion.ts`) and `AnimatePresence` for error alerts.
 - **Brand Showcase Panel (`AuthShowcasePanel`)**: Asymmetric 2-column desktop layout featuring a 35-40% Burnt Sienna (`#BE5428`) brand heritage surface with WCAG AA-compliant typography and authentic trust pillars (100% Hand-Ground, Preservative Free, Nationwide COD).
+
+## Theme & Dark Mode Architecture
+
+The platform supports light, dark, and system themes with full hydration safety:
+
+- **Theme Provider (`client/components/providers/theme-provider.tsx`)**: Integrates `next-themes` with `attribute="class"`, `defaultTheme="light"`, `enableSystem`, and `disableTransitionOnChange`. Mounted at the root level in `client/app/layout.tsx` alongside `suppressHydrationWarning` on `<html>`.
+- **Mode Toggle (`client/components/mode-toggle.tsx`)**: Interactive theme switcher utilizing `next-themes` `useTheme()` hook with CSS rotate/scale transforms between `Sun` and `Moon` Lucide icons.
+- **Dropdown Primitive (`client/components/ui/dropdown-menu.tsx`)**: Accessible dropdown menu built with `@base-ui/react/menu` and styled with Tailwind CSS tokens for selecting Light, Dark, or System preferences.
 
 ## Development Workflow (without Docker for app code)
 

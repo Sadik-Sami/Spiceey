@@ -62,3 +62,18 @@ After building any component — update this file with the component name, file 
 - **Path:** `client/components/ui/toast.tsx`
 - **Pattern:** Base UI Toast manager with swipe physics, stack expansion, and status icons (success, info, warning, error, loading)
 - **Classes:** Viewport `pointer-events-none fixed inset-x-4 bottom-4 z-50 mx-auto w-auto max-w-sm outline-none sm:right-4 sm:left-auto sm:mx-0 sm:w-full`, Toast root `group/toast pointer-events-auto absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom rounded-2xl border bg-popover text-popover-foreground shadow-lg`
+
+### ThemeProvider
+- **Path:** `client/components/providers/theme-provider.tsx`
+- **Pattern:** Client wrapper component for `next-themes` ThemeProvider
+- **Configuration:** `attribute="class"`, `defaultTheme="light"`, `enableSystem`, `disableTransitionOnChange`
+
+### ModeToggle
+- **Path:** `client/components/mode-toggle.tsx`
+- **Pattern:** Accessible theme mode switcher dropdown with animated rotate/scale Sun and Moon icons
+- **Classes:** Trigger button `variant="outline" size="icon"`, Sun icon `h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0`, Moon icon `absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100`
+
+### DropdownMenu (UI Primitive)
+- **Path:** `client/components/ui/dropdown-menu.tsx`
+- **Pattern:** Base UI Menu primitive wrapper with positioner, content, items, submenus, radio/checkbox items, and shortcuts
+- **Classes:** Popup content `z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none`, Item `group/dropdown-menu-item relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground`

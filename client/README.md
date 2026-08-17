@@ -11,6 +11,7 @@ Next.js 16 frontend for Spiceey — the storefront for a single-brand DTC ecomme
 - **Motion** (Framer Motion) 13 — scroll reveals, hover physics, and micro-interactions
 - **Better Auth React** 1.6.29 — auth client communicating with the Express backend
 - **React Hook Form** + **Zod** 4 — schema-validated client forms
+- **next-themes** 0.4.x — theme switching (light, dark, system) with hydration protection
 - **shadcn/ui** + **Base UI** + `lucide-react` icons — component primitives
 
 ## UI Standards
@@ -58,6 +59,15 @@ Authentication routes are isolated under the `app/(auth)` route group:
   - `auth-showcase-panel.tsx` — Brand heritage visual panel with Burnt Sienna commitment (`#BE5428`), texture overlay, and trust pillars.
   - `auth-back-button.tsx` — Spring-animated back button with history fallback.
   - `social-auth-button.tsx` — Reusable Google OAuth button.
+
+## Theme & Dark Mode
+
+Theme management uses `next-themes` with Tailwind CSS v4 class-based theming:
+
+- **Provider (`components/providers/theme-provider.tsx`)**: Wraps `next-themes` with `attribute="class"`, `defaultTheme="light"`, `enableSystem`, and `disableTransitionOnChange`. Mounted in `app/layout.tsx` around `{children}`.
+- **Hydration Guard**: The root `<html>` tag in `app/layout.tsx` includes `suppressHydrationWarning` to prevent Next.js SSR attribute mismatches.
+- **Mode Toggle (`components/mode-toggle.tsx`)**: Theme switcher rendering an accessible dropdown menu with smooth CSS transition effects (`rotate-0 scale-100` / `rotate-90 scale-0`) between `Sun` and `Moon` icons, offering Light, Dark, and System modes.
+- **Dropdown Primitive (`components/ui/dropdown-menu.tsx`)**: Base UI menu primitive with portaled positioner and spring open/close animations.
 
 ## Running Locally
 

@@ -183,7 +183,10 @@ client/
 │       ├── coupons/page.tsx          # Coupon management
 │       └── settings/page.tsx         # Announcements, shipping config
 ├── components/
-│   ├── ui/                           # shadcn/ui components
+│   ├── ui/                           # Base UI / shadcn/ui components (button, input, label, toast, dropdown-menu)
+│   ├── providers/
+│   │   └── theme-provider.tsx        # next-themes Provider wrapper
+│   ├── mode-toggle.tsx               # Theme mode switcher dropdown (Sun/Moon icons)
 │   ├── auth/
 │   │   ├── auth-back-button.tsx      # Smart router back button with fallback
 │   │   ├── auth-showcase-panel.tsx   # Asymmetric Burnt Sienna brand showcase
