@@ -149,6 +149,7 @@ client/
 │   ├── sitemap.ts                    # SEO sitemap.xml
 │   ├── proxy.ts                      # Auth + RBAC route protection
 │   ├── (auth)/
+│   │   ├── layout.tsx                # Auth route layout (smart back button + brand header/footer)
 │   │   ├── login/page.tsx            # Login page
 │   │   └── register/page.tsx         # Registration page
 │   ├── (shop)/
@@ -183,6 +184,12 @@ client/
 │       └── settings/page.tsx         # Announcements, shipping config
 ├── components/
 │   ├── ui/                           # shadcn/ui components
+│   ├── auth/
+│   │   ├── auth-back-button.tsx      # Smart router back button with fallback
+│   │   ├── auth-showcase-panel.tsx   # Asymmetric Burnt Sienna brand showcase
+│   │   ├── login-form.tsx            # React Hook Form + Zod login form
+│   │   ├── register-form.tsx         # React Hook Form + Zod register form
+│   │   └── social-auth-button.tsx    # Google OAuth action button
 │   ├── layout/
 │   │   ├── navbar.tsx                # Main navigation
 │   │   ├── footer.tsx                # Site footer
@@ -247,6 +254,8 @@ client/
 │   ├── constants.ts                  # App constants
 │   ├── api-client.ts                 # Axios/fetch wrapper for Express API
 │   ├── auth-client.ts                # Better Auth client config
+│   ├── validations/
+│   │   └── auth.ts                   # Zod schemas for login & register
 │   ├── cloudinary-client.ts          # Cloudinary upload helpers (browser)
 │   ├── seo.ts                        # SEO helpers (JSON-LD, meta)
 │   └── valid-urls.ts                 # URL validation

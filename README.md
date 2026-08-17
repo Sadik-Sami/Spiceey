@@ -9,14 +9,17 @@ Spiceey is a single-brand, direct-to-consumer (DTC) ecommerce platform in Bangla
 ├── .env.example         # Template for all environment variables
 ├── server/              # Express 5 + Drizzle ORM + PostgreSQL 17 + Better Auth
 │   └── docker-compose.yml  # Local compose: PostgreSQL only (dev)
-└── client/              # Next.js 16 (App Router) + Tailwind CSS v4
+└── client/              # Next.js 16 (App Router) + Tailwind CSS v4 + Better Auth React
+    ├── app/(auth)/      # Isolated auth route group (/login, /register)
+    ├── components/auth/ # Client forms, brand showcase, and OAuth buttons
+    └── lib/             # Better Auth client, Zod schemas, and Motion tokens
 ```
 
 ## Technology Stack
 
 | Layer    | Stack |
 |----------|-------|
-| Client   | Next.js 16 (App Router, `standalone` output), Tailwind CSS v4, Zustand, TanStack Query, Motion, Better Auth client |
+| Client   | Next.js 16 (App Router, `standalone` output), Tailwind CSS v4, Zustand 5, TanStack Query 5, Motion 13, Better Auth React client, React Hook Form, Zod, Base UI / shadcn/ui |
 | Server   | Express 5, Drizzle ORM (0.45.2), PostgreSQL 17, Better Auth (1.6.29), Cloudinary (signed uploads), Zod |
 | Infra    | Docker Compose, multi-stage Dockerfiles, pnpm 11 |
 
@@ -65,6 +68,19 @@ The database is the same `spiceey-db` container on `localhost:5432`. For local d
 | Client (Next.js) | 3000 |
 | Server (Express) | 4000 |
 | PostgreSQL | 5432 |
+
+## Authentication Architecture
+
+Authentication is powered by **Better Auth** (1.6.29) across server and client:
+
+- **Server Authentication**: Express mounts Better Auth handlers at `/api/auth/*splat` before `express.json()`, backed by PostgreSQL and Drizzle ORM. Sessions are issued as secure `httpOnly` cookies with UUID primary keys and RBAC roles (`customer`, `admin`, `super_admin`).
+- **Client Auth Client (`client/lib/auth-client.ts`)**: Built with `@better-auth/react` pointing to `NEXT_PUBLIC_SERVER_URL` (default `http://localhost:4000`). Exports `signIn`, `signUp`, `signOut`, `useSession`, `getSession`, and inferred TypeScript types (`User`, `Session`).
+- **Isolated Auth Layout (`client/app/(auth)/layout.tsx`)**: Dedicated route group layout without storefront navigation, featuring a smart fallback back button (`AuthBackButton`), centered brand logo, and minimal footer.
+- **Routes & Pages**:
+  - `/login` (`client/app/(auth)/login/page.tsx`): Server component with metadata, housing `LoginForm` and `AuthShowcasePanel`. Supports email/password credentials, password visibility toggle, remember-me state, animated error alerts, and Google OAuth.
+  - `/register` (`client/app/(auth)/register/page.tsx`): Server component with metadata, housing `RegisterForm` and `AuthShowcasePanel`. Supports full name, email, optional Bangladesh phone number format (`017XXXXXXXX`), password with confirmation match, and Google OAuth.
+- **Form Validation & Motion**: Forms use `react-hook-form` paired with `@hookform/resolvers/zod` and Zod schemas (`client/lib/validations/auth.ts`). Micro-interactions utilize shared spring/easing tokens (`client/lib/motion.ts`) and `AnimatePresence` for error alerts.
+- **Brand Showcase Panel (`AuthShowcasePanel`)**: Asymmetric 2-column desktop layout featuring a 35-40% Burnt Sienna (`#BE5428`) brand heritage surface with WCAG AA-compliant typography and authentic trust pillars (100% Hand-Ground, Preservative Free, Nationwide COD).
 
 ## Development Workflow (without Docker for app code)
 

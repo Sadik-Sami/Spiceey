@@ -40,12 +40,20 @@ Every UI surface flows through Impeccable's command pipeline. `impeccable` is th
 
 1. **DIRECTION** — `/impeccable shape [feature]` (plan UX/UI before writing code) or `/impeccable init` (first-time setup: PRODUCT.md + buildPath). New visual worlds go through `reference/new-work.md` (direction contracts, concept seed, color strategy).
 2. **BUILD** — `/develop` with `design-taste-frontend` constraints active (quality floor) and ui-rules.md/ui-tokens.md in force.
-3. **REFINE** — `/impeccable audit` (a11y/perf/responsive) → `/impeccable critique` (UX review: hierarchy, clarity, resonance) → fix findings in one batch → `/impeccable polish`.
+3. **REFINE** — `/impeccable audit` (a11y/perf/responsive) → `/impeccable critique` (UX review: hierarchy, clarity, resonance) → live browser verification (see `agent-browser` protocol below) → fix findings in one batch → `/impeccable polish`.
 4. **ENHANCE (only when needed)** — `/impeccable animate`, `bolder`, `quieter`, `distill`, `colorize`, `typeset`, `layout`, `delight`, `overdrive`.
 5. **HARDEN** — `/impeccable harden` (errors, edge cases, i18n) → `adapt` (devices) → `optimize` (performance).
 6. **DOCUMENT** — `/impeccable extract` (pull tokens/components into the design system) → `document` (generate DESIGN.md) → `/sync`.
 
 Discipline: never run two enhancement commands on the same surface in one pass. Batch audit/critique findings, fix once, polish, stop. Bounded passes only — no open-ended polish loops.
+
+#### Agent-Browser Verification Protocol
+When validating UI/UX, forms, or responsiveness, use `agent-browser` with strict batching to avoid burning model quota:
+- **Batching & Snapshots:** Always batch browser operations or combine them in 1–2 shell calls (e.g. `agent-browser open [url] && agent-browser snapshot --json && agent-browser close`). Never dump full HTML; use element refs (`@e1`, `@e2`) from `snapshot --json`.
+- **Form & Input Validation:** Test input typing, focus/blur states, form schema errors (Zod / React Hook Form), and loading/disabled states on submit buttons without open-ended clicking.
+- **Responsiveness Check:** Test desktop (1280px) and mobile (390px) viewports (`agent-browser set-viewport 390 844`). Ensure no horizontal overflow, clipped text, or broken navigation drawer/menus.
+- **Hydration & Error Audit:** Run `agent-browser console` and `agent-browser network` to verify zero Next.js hydration mismatches, uncaught runtime errors, or 4xx/5xx API failures.
+- **Visual Palette Confirmation:** Capture screenshot to `/tmp/opencode/ui-verify.png` and confirm Burnt Sienna (`#BE5428` / `#D96C3C`) 30–40% region commitment and hierarchy before marking done. Close browser immediately after.
 
 ### B. Design & UI/UX (tiered)
 
@@ -84,6 +92,7 @@ We follow the JS Mastery Engineering Workflow. State lives in files (`docs/scope
 
 ### D. Custom AI Assistants & APIs
 
+- **`agent-browser`** — Use for live DOM inspection, form testing, responsiveness audits (mobile/desktop), and zero-hydration-error validation during the REFINE step.
 - **`context7-mcp`** — **Always** use this when implementing `motion/react`, `Next.js 16 (proxy.ts)`, `Drizzle`, or `Better Auth` to pull the latest syntax and avoid hallucinating deprecated APIs.
 - **`ponytail` (Full Mode)** — Emphasize the "lazy senior developer" approach for backend/logic: write minimal, efficient code, reuse standard libraries, and aggressively avoid over-engineering. YAGNI applies heavily.
 - **`/imprint`** — Run after finalizing a unique UI pattern so it can be captured and reused consistently later.

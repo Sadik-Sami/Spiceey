@@ -9,7 +9,8 @@ Next.js 16 frontend for Spiceey — the storefront for a single-brand DTC ecomme
 - **Zustand** 5 — lightweight client state
 - **TanStack Query** 5 — server state and data fetching (via axios)
 - **Motion** (Framer Motion) 13 — scroll reveals, hover physics, and micro-interactions
-- **Better Auth** 1.6.29 — auth client, mirrors the server's version
+- **Better Auth React** 1.6.29 — auth client communicating with the Express backend
+- **React Hook Form** + **Zod** 4 — schema-validated client forms
 - **shadcn/ui** + **Base UI** + `lucide-react` icons — component primitives
 
 ## UI Standards
@@ -39,7 +40,24 @@ Use `font-display` for headings and hero copy; reserve `font-sans` for body and 
 
 ### Motion
 
-All interactive UI uses Motion animations from the start: scroll-reveals on section entry, hover physics on cards and buttons. Import from `motion/react`.
+All interactive UI uses Motion animations from the start: scroll-reveals on section entry, hover physics on cards and buttons. Import from `motion/react`. Animation constants (easing curves, durations, stagger timings) are centralized in `lib/motion.ts`.
+
+## Authentication & Routes
+
+Authentication routes are isolated under the `app/(auth)` route group:
+
+- **Isolated Layout (`app/(auth)/layout.tsx`)**: Excludes the storefront header/footer, featuring a smart fallback `AuthBackButton` and brand header.
+- **Routes**:
+  - `/login` (`app/(auth)/login/page.tsx`): Server component with SSR SEO metadata, rendering `LoginForm` and `AuthShowcasePanel`.
+  - `/register` (`app/(auth)/register/page.tsx`): Server component with SSR SEO metadata, rendering `RegisterForm` and `AuthShowcasePanel`.
+- **Client Auth Integration (`lib/auth-client.ts`)**: Configured with `createAuthClient` from `better-auth/react` targeting `NEXT_PUBLIC_SERVER_URL`. Exports `signIn`, `signUp`, `signOut`, `useSession`, `getSession`, and TypeScript session/user types.
+- **Form Validation (`lib/validations/auth.ts`)**: Zod schemas for login and registration with Bangladesh phone number format support (`/^(?:\+8801|01)[3-9]\d{8}$/`) and password confirmation matching.
+- **Components (`components/auth/`)**:
+  - `login-form.tsx` — Email/password login with remember me, password toggle, animated error states, and Google OAuth.
+  - `register-form.tsx` — Full name, email, phone, and password confirmation with Google OAuth.
+  - `auth-showcase-panel.tsx` — Brand heritage visual panel with Burnt Sienna commitment (`#BE5428`), texture overlay, and trust pillars.
+  - `auth-back-button.tsx` — Spring-animated back button with history fallback.
+  - `social-auth-button.tsx` — Reusable Google OAuth button.
 
 ## Running Locally
 

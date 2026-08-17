@@ -7,7 +7,7 @@ Update this file after every completed feature. Any AI agent reading this should
 ## Current Status
 
 **Phase:** Phase 1 — Foundation
-**Last completed:** Better Auth Express Setup (instance + schemas + global types)
+**Last completed:** Client Auth Setup & Form Integration (`auth-client.ts`, `(auth)` routes, Login & Register forms with Zod validation, asymmetric showcase panel)
 **Next:** 01 Homepage — Navbar & Mobile Menu
 
 ---
@@ -28,8 +28,9 @@ Update this file after every completed feature. Any AI agent reading this should
 - [ ] Footer
 
 **02 Authentication**
-- [ ] Login & Register Page UIs
+- [x] Login & Register Page UIs
 - [x] Better Auth Express Setup
+- [x] Client Auth Client Setup (`auth-client.ts` + Login & Register Form Integration)
 - [ ] API Routes (sign-in, sign-up, session, sign-out)
 - [ ] Zustand Auth Store
 
@@ -158,6 +159,9 @@ _Add decisions here as they are made during implementation._
 - **Path Aliases & Imports:** Switched to `moduleResolution: "bundler"` and added `tsc-alias -f` to the build step. We now use `@/` path aliases everywhere in `src/` without ugly `.js` extensions. The build step automatically resolves and appends the `.js` extensions needed for ESM production runtime.
 - **Rate Limiting & IP Tracking:** Resolved Better Auth's shared-bucket fallback warning. Added `advanced.ipAddress` config (headers: `x-forwarded-for`, `x-real-ip`, etc.) and `trustedProxies` via env. Also added `NODE_ENV=development` to `.env` so local dev correctly falls back to `127.0.0.1` instead of triggering a rate-limit warning.
 - **ORM:** Drizzle ORM 0.45.2 (stable line) on PostgreSQL 17; integer BDT money; `SELECT ... FOR UPDATE` + guarded atomic UPDATE for stock reservation.
+- **Auth Route Layout & Heritage Showcase:** Implemented `app/(auth)/layout.tsx` with dedicated navigation (sticky header with `AuthBackButton` and centered brand logo, minimal footer). Asymmetric 2-column desktop grid pairs an immersive `AuthShowcasePanel` on `lg:col-span-5` (35–40% Burnt Sienna `#BE5428` commitment, high-contrast white text, and trust pillars) with full-feature client form cards on `lg:col-span-7`.
+- **Client Auth Integration (`auth-client.ts`):** Initialized `createAuthClient` from `better-auth/react` pointing to `NEXT_PUBLIC_SERVER_URL` (default `http://localhost:4000`). Exported `signIn`, `signUp`, `signOut`, `useSession`, `getSession`, and enriched `User` / `Session` type inferences (`phone`, `role`).
+- **Form Validation & Motion Physics:** Built `login-form.tsx` and `register-form.tsx` using `react-hook-form` + `@hookform/resolvers/zod`. Validation rules in `lib/validations/auth.ts` enforce Bangladesh phone formats (`/^(?:\+8801|01)[3-9]\d{8}$/`) and password confirmation matching. Standardized spring/easing curves and stagger durations in `lib/motion.ts` with `AnimatePresence` alerts for error feedback.
 
 ---
 

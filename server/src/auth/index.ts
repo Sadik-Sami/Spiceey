@@ -24,8 +24,10 @@ export const auth = betterAuth({
 	...(googleConfigured && {
 		socialProviders: {
 			google: {
+				prompt: 'select_account',
 				clientId: env.GOOGLE_CLIENT_ID!,
 				clientSecret: env.GOOGLE_CLIENT_SECRET!,
+				redirectURI: 'http://localhost:4000/api/auth/callback/google',
 			},
 		},
 	}),
