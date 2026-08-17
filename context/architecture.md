@@ -267,76 +267,40 @@ client/
 └── tsconfig.json
 ```
 
-### Server — Express v5 Backend
+### Server — Express v5 Backend (Feature Modules)
 
 ```
 server/
 ├── src/
 │   ├── index.ts                      # Express app entry point
-│   ├── routes/
-│   │   ├── index.ts                  # Route aggregator (/api)
-│   │   ├── auth.routes.ts            # Better Auth proxy endpoints
-│   │   ├── product.routes.ts         # Product CRUD
-│   │   ├── category.routes.ts        # Category listing
-│   │   ├── variant.routes.ts         # Variant management
-│   │   ├── cart.routes.ts            # Cart operations
-│   │   ├── order.routes.ts           # Order lifecycle
-│   │   ├── review.routes.ts          # Review submission/moderation
-│   │   ├── customer.routes.ts        # Customer management
-│   │   ├── inventory.routes.ts       # Inventory tracking
-│   │   ├── blog.routes.ts            # Blog content
-│   │   ├── story.routes.ts           # Story content
-│   │   ├── coupon.routes.ts          # Coupon management
-│   │   ├── analytics.routes.ts       # Dashboard analytics
-│   │   ├── shipping.routes.ts        # Shipping config
-│   │   ├── payment.routes.ts         # Payment processing (COD)
-│   │   ├── cloudinary.routes.ts      # Signed upload params + media delete
-│   │   └── admin.routes.ts           # Admin-only aggregate endpoints
-│   ├── controllers/
-│   │   ├── product.controller.ts
-│   │   ├── order.controller.ts
-│   │   ├── cart.controller.ts
-│   │   ├── auth.controller.ts
-│   │   ├── customer.controller.ts
-│   │   ├── inventory.controller.ts
-│   │   ├── blog.controller.ts
-│   │   ├── story.controller.ts
-│   │   ├── coupon.controller.ts
-│   │   ├── analytics.controller.ts
-│   │   ├── shipping.controller.ts
-│   │   ├── payment.controller.ts
-│   │   └── cloudinary.controller.ts
-│   ├── middleware/
-│   │   ├── auth.middleware.ts        # Session validation
-│   │   ├── rbac.middleware.ts        # Role-based access control
-│   │   ├── validate.middleware.ts    # Zod request validation
-│   │   └── error.middleware.ts       # Global error handler
-│   ├── services/
-│   │   ├── product.service.ts
-│   │   ├── order.service.ts
-│   │   ├── cart.service.ts
-│   │   ├── inventory.service.ts
-│   │   ├── cloudinary.service.ts     # Signature generation + destroy
-│   │   └── payment.service.ts
-│   ├── validators/
-│   │   ├── product.schema.ts
-│   │   ├── order.schema.ts
-│   │   ├── cart.schema.ts
-│   │   ├── auth.schema.ts
-│   │   └── common.schema.ts
+│   ├── env.ts                        # @t3-oss/env-core validation
+│   ├── drizzle.config.ts             # Drizzle Kit configuration
 │   ├── db/
 │   │   ├── index.ts                  # Drizzle client configuration
 │   │   ├── migrations/               # Drizzle migration files
 │   │   └── schema/                   # Modular Drizzle schema
 │   │       ├── index.ts              # Barrel export for schemas
 │   │       ├── relations.ts          # All relations definitions
-│   │       └── *.ts                  # Domain specific schemas
-│   ├── env.ts                        # @t3-oss/env-core validation
-│   ├── drizzle.config.ts             # Drizzle Kit configuration
+│   │       └── *.ts                  # Domain specific schemas (users, products, etc)
 │   ├── auth/
 │   │   └── index.ts                  # Better Auth instance setup
+│   ├── common/
+│   │   ├── middlewares/              # Global Express middlewares
+│   │   │   ├── auth.middleware.ts    # Session validation, attaches req.user
+│   │   │   ├── rbac.middleware.ts    # Role-based access control
+│   │   │   ├── error.middleware.ts   # Global error handler
+│   │   │   └── not-found.middleware.ts # 404 handler
+│   │   └── exceptions/               # Custom App Errors
+│   ├── modules/                      # Domain-Driven Feature Modules
+│   │   ├── users/                    # e.g., Users Module
+│   │   │   ├── dto/                  # Zod DTOs via drizzle-zod
+│   │   │   │   └── users.dto.ts      
+│   │   │   ├── users.controller.ts   # Route handler logic
+│   │   │   ├── users.service.ts      # Business & DB logic layer
+│   │   │   └── users.routes.ts       # REST API route definitions
+│   │   └── ...                       # Other modules (products, orders, etc.)
 │   └── types/
-│       └── index.ts                  # Server-side TypeScript types
+│       └── express.d.ts              # Express global type augmentation
 ├── package.json
 ├── tsconfig.json
 └── Dockerfile
@@ -353,13 +317,12 @@ server/
 | `client/lib/api-client.ts` | Centralized HTTP client (axios/fetch) pointing to Express server. Handles auth cookies automatically. |
 | `client/proxy.ts` | Auth guards and RBAC checks. Redirects unauthenticated users. Blocks non-admin from `/admin`. |
 | `client/types/` | Client-side TypeScript types. **Manually kept in sync with server types.** No automated sharing. |
-| `server/routes/` | Express route definitions. Mount controllers. Apply middleware. |
-| `server/controllers/` | HTTP request/response handling. Parse params. Call services. Return JSON. |
-| `server/services/` | Business logic. Database transactions. Inventory rules. Cart calculations. Cloudinary operations. |
-| `server/middleware/` | Cross-cutting concerns: auth validation, RBAC enforcement, Zod validation, error handling. |
-| `server/db/` | Schema definitions, relations, migrations. Drizzle client setup only. |
-| `server/validators/` | Zod schemas. API contract between client and server. |
-| `server/types/` | Server-side TypeScript types. Independent from client types. |
+| `server/src/modules/*/` | Domain-driven feature modules containing DTOs, controllers, services, and routes. |
+| `server/src/modules/*/dto/` | Zod schemas (using `drizzle-zod`) acting as Data Transfer Objects. |
+| `server/src/modules/*/*.controller.ts` | HTTP request/response handling. Parse and validate using DTOs. Call services. Return JSON. |
+| `server/src/modules/*/*.service.ts` | Business logic. Database transactions. Rules and calculations. |
+| `server/src/common/middlewares/` | Cross-cutting concerns: auth validation, RBAC enforcement, error handling, not-found routing. |
+| `server/src/db/` | Schema definitions, relations, migrations. Drizzle client setup only. |
 
 ---
 
@@ -700,17 +663,12 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db";
 import { env } from "../env";
-import * as schema from "../db/schema";
+import * as schema from "../db/schema/users";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
-    schema: {
-      user: schema.user,
-      session: schema.session,
-      account: schema.account,
-      verification: schema.verification,
-    },
+    schema: schema,
   }),
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
@@ -1268,7 +1226,7 @@ Each variant maintains two quantity fields:
 
 ```sql
 -- Low stock alert query
-SELECT 
+SELECT
   v.sku,
   p.name,
   v.weight,

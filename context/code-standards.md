@@ -72,120 +72,95 @@ The AI agent on this project operates as a senior engineer. This means:
 - Folders: kebab-case — `product-detail`, `admin-dashboard`
 - Component files: PascalCase — `ProductCard.tsx`, `OrderTimeline.tsx`
 - Utility files: camelCase — `api-client.ts`, `cloudinary-client.ts`
-- Type files: camelCase — `index.ts`
-- Route files: kebab-case matching the URL — `auth.routes.ts`
-- Controller files: kebab-case — `product.controller.ts`
-- Service files: kebab-case — `product.service.ts`
+- Route files: kebab-case matching the URL — `users.routes.ts`
+- Controller files: kebab-case — `users.controller.ts`
+- Service files: kebab-case — `users.service.ts`
+- DTO files: kebab-case — `users.dto.ts`
 - One component per file — never export multiple components from one file
 - Index files only in `components/ui/` — never barrel export from other folders
 
 ---
 
-## Component Structure
+## Express Feature Module Pattern (NestJS-like)
 
-Every component follows this exact order:
+We use a domain-driven Feature Module architecture for Express to ensure scalability. A module groups its DTOs, Controller, Service, and Routes.
+
+### 1. DTOs with Zod (`modules/users/dto/users.dto.ts`)
+We use `drizzle-zod` to automatically infer schemas from the database when possible, then explicitly omit/pick fields for specific actions.
 
 ```typescript
-"use client"; // only if needed
+import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
+import { user } from "@/db/schema";
+import { z } from "zod";
 
-// 1. External imports
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+export const CreateUserDto = createInsertSchema(user).omit({ id: true, createdAt: true, updatedAt: true });
+export type CreateUserDto = z.infer<typeof CreateUserDto>;
 
-// 2. Internal imports
-import { ProductCard } from "@/components/shop/ProductCard";
-
-// 3. Type definitions
-type Props = {
-  productId: string;
-  variantId: string;
-};
-
-// 4. Component
-export function ComponentName({ productId, variantId }: Props) {
-  // state
-  // derived values
-  // handlers
-  // return JSX
-}
+export const UpdateUserDto = createUpdateSchema(user).omit({
+  id: true,
+  role: true, // Role updates should be separate
+  emailVerified: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type UpdateUserDto = z.infer<typeof UpdateUserDto>;
 ```
 
-- Never use default exports for components — always named exports
-- Props type defined directly above the component — not in a separate types file unless shared
-- No inline styles — all styling via Tailwind classes
-
----
-
-## Express Controller Pattern
+### 2. Express Controller Pattern (`modules/users/users.controller.ts`)
 
 ```typescript
-// server/src/controllers/product.controller.ts
-import { Request, Response } from "express";
-import { productService } from "../services/product.service";
+import { Request, Response, NextFunction } from "express";
+import { usersService } from "./users.service";
+import { UpdateUserDto } from "./dto/users.dto";
 
-export async function getProducts(req: Request, res: Response) {
+export async function updateUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const { search, category, sort, page, limit } = req.query;
-    const result = await productService.list({
-      search: search as string,
-      category: category as string,
-      sort: sort as string,
-      page: Number(page) || 1,
-      limit: Number(limit) || 20,
-    });
-    res.json({ success: true, data: result.products, meta: result.meta });
+    const id = req.params.id;
+    const body = UpdateUserDto.parse(req.body); // Let global error handler catch Zod errors
+
+    const updatedUser = await usersService.update(id, body);
+    
+    res.json({ success: true, data: updatedUser });
   } catch (error) {
-    console.error("[products/list]", error);
-    res.status(500).json({
-      success: false,
-      error: { code: "INTERNAL_ERROR", message: "Failed to fetch products" },
-    });
+    next(error); // Forward to centralized Express 5 error handler
   }
 }
 ```
 
-- Every controller has a try/catch
-- Errors are logged with the route path as prefix: `[products/list]`
-- Always return `{ success, data, meta? }` on success
-- Always return `{ success: false, error: { code, message } }` on failure
-- Parse and validate query params before passing to services
+- Every controller has a try/catch.
+- Errors are forwarded using `next(error)` to the global error middleware.
+- Always return `{ success: true, data?: T, meta?: any }` on success.
+- Use DTOs to parse and validate incoming `req.body`, `req.query`, or `req.params`.
 
----
-
-## Service Pattern
+### 3. Service Pattern (`modules/users/users.service.ts`)
 
 ```typescript
-// server/src/services/product.service.ts
-import { db } from "../db";
-import { products } from "../db/schema";
-import { eq, ilike } from "drizzle-orm";
+import { db } from "@/db";
+import { user } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { UpdateUserDto } from "./dto/users.dto";
+import { NotFoundError } from "@/common/exceptions/app-errors";
 
-export const productService = {
-  async list(filters: ProductFilters) {
-    const where = [];
-    if (filters.search) {
-      where.push(ilike(products.name, `%${filters.search}%`));
-    }
-    if (filters.category) {
-      where.push(eq(products.category, filters.category));
-    }
+export const usersService = {
+  async update(id: string, data: UpdateUserDto) {
+    const [updated] = await db
+      .update(user)
+      .set(data)
+      .where(eq(user.id, id))
+      .returning();
 
-    const result = await db.query.products.findMany({
-      where: and(...where),
-      with: { variants: true, images: true },
-      limit: filters.limit,
-      offset: (filters.page - 1) * filters.limit,
-    });
+    if (!updated) throw new NotFoundError("User not found");
 
-    return { products: result, meta: { page: filters.page, limit: filters.limit } };
+    return updated;
   },
 };
 ```
 
-- Services are plain objects with async methods
-- Services handle all database queries and business logic
-- Services return plain data — never `res.json()`
-- Wrap multi-step operations in Drizzle transactions
+- Services are plain objects with async methods.
+- Services handle all database queries and business logic.
+- Services throw standard App Errors (`NotFoundError`, `BadRequestError`, etc.) which the global error handler intercepts and formats.
+- Services return plain data — never `res.json()`.
+- Wrap multi-step operations in Drizzle transactions.
 
 ---
 

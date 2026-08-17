@@ -118,9 +118,32 @@ export const verification = pgTable(
   (table) => [uniqueIndex("verification_identifier_idx").on(table.identifier)],
 );
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userAvatars = pgTable(
+  "user_avatars",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    publicId: text("public_id").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("user_avatars_user_id_idx").on(table.userId)],
+);
+
+export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   accounts: many(account),
+  avatar: one(userAvatars, {
+    fields: [user.id],
+    references: [userAvatars.userId],
+  }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -133,6 +156,13 @@ export const sessionRelations = relations(session, ({ one }) => ({
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, {
     fields: [account.userId],
+    references: [user.id],
+  }),
+}));
+
+export const userAvatarsRelations = relations(userAvatars, ({ one }) => ({
+  user: one(user, {
+    fields: [userAvatars.userId],
     references: [user.id],
   }),
 }));

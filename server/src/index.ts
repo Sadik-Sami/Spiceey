@@ -4,6 +4,13 @@ import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "@/auth";
 
+// Routes
+import userRoutes from "@/modules/users/users.routes";
+
+// Middlewares
+import { errorMiddleware } from "@/common/middlewares/error.middleware";
+import { notFoundMiddleware } from "@/common/middlewares/not-found.middleware";
+
 const app = express();
 const PORT = env.PORT;
 
@@ -45,17 +52,12 @@ app.get("/api/health", (req: Request, res: Response) => {
   });
 });
 
-// ─── Global error handler (Express v5) ─────────────────────────────────────────
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error("[Global Error]", err);
-  res.status(500).json({
-    success: false,
-    error: {
-      code: "INTERNAL_ERROR",
-      message: err.message || "An unexpected error occurred",
-    },
-  });
-});
+// ─── API Routes ────────────────────────────────────────────────────────────────
+app.use("/api/users", userRoutes);
+
+// ─── Global Error & 404 Handlers ───────────────────────────────────────────────
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
 
 app.listen(PORT, () => {
   console.log(`[Server] Listening on port ${PORT}`);
