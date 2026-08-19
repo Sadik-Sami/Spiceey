@@ -7,8 +7,8 @@ Update this file after every completed feature. Any AI agent reading this should
 ## Current Status
 
 **Phase:** Phase 1 — Foundation
-**Last completed:** Client Auth Setup & Form Integration (`auth-client.ts`, `(auth)` routes, Login & Register forms with Zod validation, asymmetric showcase panel)
-**Next:** 01 Homepage — Navbar & Mobile Menu
+**Last completed:** 01 Homepage — Navbar & Mobile Menu (`navbar.tsx`, `mobile-nav.tsx`, Cart Badge counter, Session menu, Theme toggle)
+**Next:** 01 Homepage — Hero Section
 
 ---
 
@@ -17,7 +17,8 @@ Update this file after every completed feature. Any AI agent reading this should
 ### Phase 1 — Foundation
 
 **01 Homepage**
-- [ ] Navbar & Mobile Menu
+
+- [x] Navbar & Mobile Menu
 - [ ] Hero Section
 - [ ] Featured Products
 - [ ] Best Sellers
@@ -28,6 +29,7 @@ Update this file after every completed feature. Any AI agent reading this should
 - [ ] Footer
 
 **02 Authentication**
+
 - [x] Login & Register Page UIs
 - [x] Better Auth Express Setup
 - [x] Client Auth Client Setup (`auth-client.ts` + Login & Register Form Integration)
@@ -35,19 +37,23 @@ Update this file after every completed feature. Any AI agent reading this should
 - [ ] Zustand Auth Store
 
 **03 Route Protection**
+
 - [ ] Next.js proxy.ts setup
 - [ ] Auth & RBAC validation logic
 
 **04 Express Server Foundation**
+
 - [ ] App & Middleware setup (CORS, Error, Zod)
 - [ ] Drizzle Setup & Database Schema
 
 **05 Database Seed**
+
 - [ ] Mock Products, Blogs, & Config Seed Data
 
 ### Phase 2 — Shop
 
 **06 Shop Page**
+
 - [ ] Page Layout & Search Bar
 - [ ] Category Filter Tabs & Sort Dropdown
 - [ ] Product Card Component
@@ -55,6 +61,7 @@ Update this file after every completed feature. Any AI agent reading this should
 - [ ] API: GET /api/products
 
 **07 Product Detail Page**
+
 - [ ] Image Gallery Component
 - [ ] Product Info & Variant Selector
 - [ ] Add to Cart & Wishlist Actions
@@ -66,12 +73,14 @@ Update this file after every completed feature. Any AI agent reading this should
 ### Phase 3 — Cart & Checkout
 
 **08 Cart Page**
+
 - [ ] Zustand Cart Store Setup
 - [ ] Cart Page Layout & Item Component
 - [ ] Order Summary & Coupon Input
 - [ ] API: Cart Sync & Coupon Validation
 
 **09 Checkout Flow**
+
 - [ ] Checkout Layout & Progress Indicator
 - [ ] Step 1: Shipping Form
 - [ ] Step 2: Payment & Review
@@ -81,23 +90,27 @@ Update this file after every completed feature. Any AI agent reading this should
 ### Phase 4 — Customer Account
 
 **10 Profile Page**
+
 - [ ] Profile Layout & Sidebar
 - [ ] Personal Info & Avatar Upload
 - [ ] Address Management Modal
 - [ ] API: Profile & Address CRUD
 
 **11 My Orders Page**
+
 - [ ] Order List Layout & Filters
 - [ ] Expandable Order Card
 - [ ] API: GET /api/orders/my
 
 **12 Write a Review**
+
 - [ ] Review Modal/Form Component
 - [ ] API: POST /api/reviews
 
 ### Phase 5 — Admin Dashboard
 
 **13 Admin Layout & Dashboard**
+
 - [ ] Admin Sidebar & Shell
 - [ ] Stat Cards & Trend Indicators
 - [ ] Revenue & Orders Charts
@@ -105,6 +118,7 @@ Update this file after every completed feature. Any AI agent reading this should
 - [ ] API: Analytics Endpoints
 
 **14 Product Management**
+
 - [ ] Product List Table & Filters
 - [ ] Product Form Layout & Variant Manager
 - [ ] Tiptap Rich Text Editor
@@ -112,17 +126,20 @@ Update this file after every completed feature. Any AI agent reading this should
 - [ ] API: Product CRUD & Status Toggle
 
 **15 Order Management**
+
 - [ ] Orders List & Filters
 - [ ] Order Detail View
 - [ ] Status Update & Tracking Entry
 - [ ] API: Order Management Endpoints
 
 **16 Inventory Management**
+
 - [ ] Inventory Dashboard & Alerts
 - [ ] Stock Adjustment Modal & Movement Log
 - [ ] API: Inventory Endpoints
 
 **17 Customer & 18 Review Moderation**
+
 - [ ] Customers List & Detail View
 - [ ] Reviews List, Tabs & Detail Modal
 - [ ] API: Customer & Review Moderation Endpoints
@@ -130,12 +147,14 @@ Update this file after every completed feature. Any AI agent reading this should
 ### Phase 6 — Content & Settings
 
 **19 Blog & 20 Story Management**
+
 - [ ] Admin Blog & Story CRUD UIs
 - [ ] Public Blog & Story List Pages
 - [ ] Public Blog & Story Detail Pages
 - [ ] API: Content CRUD
 
 **21 Coupon & 22 Settings Management**
+
 - [ ] Admin Coupon List & Form
 - [ ] Admin Announcements & Shipping Config
 - [ ] Public Announcement Banner
@@ -162,7 +181,10 @@ _Add decisions here as they are made during implementation._
 - **Auth Route Layout & Heritage Showcase:** Implemented `app/(auth)/layout.tsx` with dedicated navigation (sticky header with `AuthBackButton` and centered brand logo, minimal footer). Asymmetric 2-column desktop grid pairs an immersive `AuthShowcasePanel` on `lg:col-span-5` (35–40% Burnt Sienna `#BE5428` commitment, high-contrast white text, and trust pillars) with full-feature client form cards on `lg:col-span-7`.
 - **Client Auth Integration (`auth-client.ts`):** Initialized `createAuthClient` from `better-auth/react` pointing to `NEXT_PUBLIC_SERVER_URL` (default `http://localhost:4000`). Exported `signIn`, `signUp`, `signOut`, `useSession`, `getSession`, and enriched `User` / `Session` type inferences (`phone`, `role`).
 - **Form Validation & Motion Physics:** Built `login-form.tsx` and `register-form.tsx` using `react-hook-form` + `@hookform/resolvers/zod`. Validation rules in `lib/validations/auth.ts` enforce Bangladesh phone formats (`/^(?:\+8801|01)[3-9]\d{8}$/`) and password confirmation matching. Standardized spring/easing curves and stagger durations in `lib/motion.ts` with `AnimatePresence` alerts for error feedback.
-- **Theme & Dark Mode Foundation:** Configured `next-themes` via `ThemeProvider` (`client/components/providers/theme-provider.tsx`) with `attribute="class"`, `defaultTheme="light"`, `enableSystem`, and `disableTransitionOnChange`. Mounted at root in `client/app/layout.tsx` with `suppressHydrationWarning` on `<html>`. Added `ModeToggle` (`client/components/mode-toggle.tsx`) with animated Sun/Moon icon transforms and Base UI `DropdownMenu` primitive for Light/Dark/System selection.
+- **Theme & Dark Mode Foundation:** Configured `next-themes` via `ThemeProvider` (`client/components/providers/theme-provider.tsx`) with `attribute="class"`, `defaultTheme="light"`, `enableSystem`, and `disableTransitionOnChange`. Mounted at root in `client/app/layout.tsx` with `suppressHydrationWarning` on `<html>`. Declared `@custom-variant dark (&:where(.dark, .dark *));` in `client/app/globals.css` to enable class-based dark styling in Tailwind v4 alongside explicit `--color-popover`, `--color-muted`, `--color-input`, and `--color-ring` tokens for light, `.dark`, and `[data-theme='dark']` scopes. Added `ModeToggle` (`client/components/mode-toggle.tsx`) with animated Sun/Moon icon transforms and Base UI `DropdownMenu` primitive for Light/Dark/System selection.
+- **Tailwind Canonical Classes Standard:** Standardized on canonical Tailwind v4 scale utility classes (e.g., `min-h-11` for 44px touch targets, `min-h-10` for 40px, `min-w-4` for 16px badge min-width, `w-30` for 120px, `max-w-350` for 1400px container max-width). Arbitrary bracket classes (`[...]`) are strictly prohibited unless a dimension is unrepresentable on the standard scale.
+- **Navigation & Mobile Drawer (`navbar.tsx`, `mobile-nav.tsx`, `cart-store.ts`):** Implemented sticky navigation shell (`sticky top-0 z-40 bg-surface/80 backdrop-blur-xl border-b border-border`) with Bricolage Grotesque logo, desktop active spring pill indicator (`layoutId="nav-active-indicator"`), hydration-safe cart badge reading from Zustand (`useCartStore` with `useSyncExternalStore`), authenticated user dropdown via Base UI with role checking (`admin` / `super_admin`), and AnimatePresence mobile drawer with touch targets >=44px (`min-h-11`), category pills, Escape key dismissal, and body scroll locking. Mounted globally in `client/app/layout.tsx`.
+- **Google OAuth Client-Origin & Redirect URI Fix:** Configured dynamic `callbackURL` resolution (`typeof window !== "undefined" ?`${window.location.origin}/profile` : "/profile"`) in `client/components/auth/login-form.tsx` and `client/components/auth/register-form.tsx`. On the server (`server/src/auth/index.ts`), added explicit `redirectURI: `${env.BETTER_AUTH_URL}/api/auth/callback/google`` and `prompt: "select_account"` to ensure seamless multi-origin OAuth redirects.
 
 ---
 

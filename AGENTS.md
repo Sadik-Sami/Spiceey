@@ -23,6 +23,8 @@ Read in this exact order before any implementation:
 ## 2. Immutable Rules
 
 - Never use hardcoded hex values or raw Tailwind color classes. Always use CSS variables from `@theme` (e.g., `bg-primary`, `text-accent`).
+- **Tailwind Canonical Classes:** Always use standard Tailwind scale classes (e.g. `min-h-11` for 44px, `min-h-10` for 40px, `min-w-4` for 16px, `min-w-24` for 96px, `w-30` for 120px) instead of arbitrary bracket values (`min-h-[44px]`). Arbitrary brackets (`[...]`) are strictly prohibited unless the size cannot be represented on the Tailwind scale (e.g. `min-h-[100dvh]`, `max-w-[1400px]`, `aspect-[4/5]`).
+- **Zero Inline Feature Code & Parallel Delegation:** The primary orchestrator MUST NEVER write feature code directly (>5 lines). All implementations must be dispatched via a single top-level `subagent` call with `workflowScript` and `async: true`, launching specialist children in parallel via `await runs.all([...])` (`@designer` for UI, `@builder` for backend/data, `@test-runner` with `gate` for verification, `@docs-writer` for context sync).
 - The brand palette is **Burnt Sienna Committed** — one committed accent (sienna, `#BE5428` light / `#D96C3C` dark fields). Never introduce a second accent color. The sienna must appear as large regions (30-40% of surface), not only tiny button accents.
 - Always implement `Motion` animations for UI components from the start (scroll-reveals, hover physics, etc.).
 - Follow AEO (Answer Engine Optimization) guidelines for all text content (FAQs, product descriptions).
@@ -48,7 +50,9 @@ Every UI surface flows through Impeccable's command pipeline. `impeccable` is th
 Discipline: never run two enhancement commands on the same surface in one pass. Batch audit/critique findings, fix once, polish, stop. Bounded passes only — no open-ended polish loops.
 
 #### Agent-Browser Verification Protocol
+
 When validating UI/UX, forms, or responsiveness, use `agent-browser` with strict batching to avoid burning model quota:
+
 - **Batching & Snapshots:** Always batch browser operations or combine them in 1–2 shell calls (e.g. `agent-browser open [url] && agent-browser snapshot --json && agent-browser close`). Never dump full HTML; use element refs (`@e1`, `@e2`) from `snapshot --json`.
 - **Form & Input Validation:** Test input typing, focus/blur states, form schema errors (Zod / React Hook Form), and loading/disabled states on submit buttons without open-ended clicking.
 - **Responsiveness Check:** Test desktop (1280px) and mobile (390px) viewports (`agent-browser set-viewport 390 844`). Ensure no horizontal overflow, clipped text, or broken navigation drawer/menus.
@@ -58,15 +62,18 @@ When validating UI/UX, forms, or responsiveness, use `agent-browser` with strict
 ### B. Design & UI/UX (tiered)
 
 **Tier 1 — always active during any UI work:**
+
 - **`impeccable`** — the orchestrator (pipeline in Section 3A).
 - **`design-taste-frontend`** — anti-slop quality floor. Hard bans always enforced: premium-consumer palette rules (warm beige + brass + oxblood + espresso banned), em-dash ban, eyebrow restraint, one-accent lock, section-layout repetition ban, 50+ item pre-flight check. Load before building any landing or storefront page.
 
 **Tier 2 — load per task type:**
+
 - **`bencium-impact-designer`** — hero sections, product cards, and other components that must be memorable. Force-Variety creative direction, bold commitment.
 - **`high-end-visual-design`** — $150k agency component patterns (double-bezel nested cards, island buttons, motion choreography). Signature components only, never as a global style.
 - **`bencium-aeo`** — product descriptions, FAQs, blog content (18-token extraction sentences, evidence panels, FAQPage schema).
 
 **Tier 3 — situational:**
+
 - **`bencium-controlled-ux-designer`** — collaborative exploration of design options before committing (ask-first protocol).
 - **`design-audit`** — standalone second-opinion visual audit after major milestones (Impeccable's own audit runs in the pipeline first).
 - **`imagegen-frontend-web`** — when generating design reference images for direction cards or section comps.

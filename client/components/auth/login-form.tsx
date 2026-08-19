@@ -51,19 +51,20 @@ export function LoginForm() {
         {
           onError: (ctx) => {
             setAuthError(
-              ctx.error.message || "Invalid email or password. Please try again."
+              ctx.error.message ||
+                "Invalid email or password. Please try again.",
             );
           },
           onSuccess: () => {
             router.push("/profile");
             router.refresh();
           },
-        }
+        },
       );
 
       if (res.error) {
         setAuthError(
-          res.error.message || "Invalid email or password. Please try again."
+          res.error.message || "Invalid email or password. Please try again.",
         );
       }
     } catch (err: unknown) {
@@ -82,9 +83,14 @@ export function LoginForm() {
     setAuthError(null);
 
     try {
+      const callbackURL =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/profile`
+          : "/profile";
+
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/profile",
+        callbackURL,
       });
     } catch (err: unknown) {
       const message =
@@ -148,7 +154,10 @@ export function LoginForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         {/* Email Field */}
         <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-text-primary font-medium text-sm">
+          <Label
+            htmlFor="email"
+            className="text-text-primary font-medium text-sm"
+          >
             Email address
           </Label>
           <div className="relative">
@@ -183,7 +192,10 @@ export function LoginForm() {
         {/* Password Field */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-text-primary font-medium text-sm">
+            <Label
+              htmlFor="password"
+              className="text-text-primary font-medium text-sm"
+            >
               Password
             </Label>
             <Link
@@ -254,8 +266,16 @@ export function LoginForm() {
         <motion.button
           type="submit"
           disabled={isLoading || isGoogleLoading}
-          whileHover={shouldReduceMotion || isLoading || isGoogleLoading ? undefined : { y: -1 }}
-          whileTap={shouldReduceMotion || isLoading || isGoogleLoading ? undefined : { scale: 0.98 }}
+          whileHover={
+            shouldReduceMotion || isLoading || isGoogleLoading
+              ? undefined
+              : { y: -1 }
+          }
+          whileTap={
+            shouldReduceMotion || isLoading || isGoogleLoading
+              ? undefined
+              : { scale: 0.98 }
+          }
           transition={MOTION.ease.spring}
           className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
         >

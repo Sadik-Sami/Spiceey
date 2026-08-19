@@ -84,6 +84,7 @@ Card hover (where interactive): shadow expands via spring physics (200 stiffness
 Four levels used consistently:
 
 **Hero / Display** — homepage hero, page titles on marketing pages
+
 ```
 font-display text-4xl md:text-5xl lg:text-6xl
 font-weight: 800
@@ -93,6 +94,7 @@ color: text-text-primary
 ```
 
 **Section headings** — card group titles, page section titles
+
 ```
 text-2xl md:text-3xl
 font-weight: 700
@@ -102,6 +104,7 @@ color: text-text-primary
 ```
 
 **Body / primary content text**
+
 ```
 text-base (16px)
 font-weight: 400
@@ -111,6 +114,7 @@ color: text-text-primary
 ```
 
 **Small / labels / muted text** — timestamps, captions, helper text
+
 ```
 text-xs (12px) or text-sm (14px)
 font-weight: 400-500
@@ -230,6 +234,7 @@ font-weight: font-medium
 ```
 
 Specific badge types:
+
 - Discount: `bg-accent text-accent-foreground`
 - Category: use category color tokens (see ui-tokens.md)
 - Order status: use status color tokens (see ui-tokens.md)
@@ -250,6 +255,7 @@ Admin trend badges use `rounded-sm` (4px) not pill.
 All buttons: `rounded-lg` (8px), `px-5 py-2.5`, `text-sm font-semibold`.
 
 Button states:
+
 - Hover: darken background
 - Active: `scale(0.97)` via spring
 - Disabled: `opacity-50 cursor-not-allowed`
@@ -291,6 +297,7 @@ error: border-error ring-2 ring-error/20
 ## Product Grid
 
 Responsive columns:
+
 - Mobile (< 640px): 2 columns
 - Tablet (640-1023px): 3 columns
 - Desktop (1024px+): 4 columns
@@ -343,11 +350,13 @@ Every section that can be empty must have an empty state:
 ## Web Vitals Rules
 
 ### LCP (< 2.5s)
+
 - Hero image: `next/image` with `priority` prop and `sizes` attribute
 - Font: loaded via `next/font/google` with `display: "swap"`
 - Above-fold content must not depend on client-side JS to render
 
 ### CLS (< 0.1)
+
 - All images must have explicit `width` and `height` OR use `aspect-ratio` CSS
 - Font: variable font with proper fallback metrics
 - Announcement banner reserves height before mount (fixed height container)
@@ -355,6 +364,7 @@ Every section that can be empty must have an empty state:
 - Skeleton loaders match exact dimensions of loaded content
 
 ### INP (< 200ms)
+
 - All animations on GPU (transform + opacity only)
 - Debounce search input: 300ms
 - Heavy computation off main thread
@@ -384,9 +394,14 @@ Every section that can be empty must have an empty state:
 
 ---
 
-## Tailwind v4 Note
+## Tailwind v4 & Canonical Classes
 
 This project uses Tailwind v4. Tokens are defined with `@theme` in globals.css — no `tailwind.config.ts` needed for colors. Never define colors in a config file. Always use `@theme` for new tokens. Use `@tailwindcss/postcss` plugin, not the legacy `tailwindcss` PostCSS plugin.
+
+**Tailwind Canonical Classes Rule:**
+
+- Always use standard Tailwind scale classes (e.g., `min-h-11` for 44px, `min-h-10` for 40px, `min-w-4` for 16px, `min-w-24` for 96px, `w-30` for 120px) instead of arbitrary bracket values (`min-h-[44px]`).
+- Arbitrary brackets (`[...]`) are strictly prohibited unless the size cannot be represented on the standard Tailwind scale (e.g., `min-h-[100dvh]`, `max-w-[1400px]`, `aspect-[4/5]`).
 
 ---
 
@@ -400,7 +415,7 @@ Mobile-first approach. All styling starts with mobile defaults, scales up:
 - `xl:` (1280px) — standard desktops
 - `2xl:` (1536px) — large screens
 
-Minimum touch target: 44x44px on all interactive elements.
+Minimum touch target: `min-h-11 min-w-11` (44px minimum) on all interactive elements.
 
 ---
 
@@ -424,3 +439,4 @@ Minimum touch target: 44x44px on all interactive elements.
 - Never use hex values directly in components — always use token classes
 - Never have more than one `h1` heading per page
 - Never use placeholder text as the input label
+- Never use arbitrary bracket classes (`min-h-[44px]`, `w-[40px]`) when a canonical Tailwind scale class (`min-h-11`, `w-10`) exists

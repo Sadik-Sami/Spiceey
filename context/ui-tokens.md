@@ -53,6 +53,8 @@ className="bg-green-800 text-red-500"
 ```css
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Fonts are loaded via next/font/google in app/layout.tsx.
    @theme inline maps the next/font CSS variables to Tailwind utilities. */
 @theme inline {
@@ -80,6 +82,14 @@ className="bg-green-800 text-red-500"
   --color-surface: #FFFFFF;
   --color-surface-secondary: #F7F5F2;
   --color-surface-muted: #F0EDE8;
+
+  /* ─── Popover & Muted Primitives ─── */
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #292524;
+  --color-muted: #F7F5F2;
+  --color-muted-foreground: #78716C;
+  --color-input: #E7E1D9;
+  --color-ring: #BE5428;
 
   /* ─── Borders ─── */
   --color-border: #E7E1D9;
@@ -157,34 +167,19 @@ className="bg-green-800 text-red-500"
 }
 
 /* ─── Dark Mode Tokens (warm charcoal, green tint removed) ─── */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --color-background: #1C1917;
-    --color-surface: #292524;
-    --color-surface-secondary: #322E29;
-    --color-surface-muted: #3B3630;
-
-    --color-border: #403A33;
-    --color-border-light: #4C453D;
-
-    --color-text-primary: #FAF9F7;
-    --color-text-secondary: #D6D2CB;
-    --color-text-muted: #A8A29E;
-
-    /* Brighter sienna for dark-mode brand fields; buttons keep the AA-safe #BE5428 */
-    --color-primary: #D96C3C;
-    --color-primary-hover: #E58354;
-    --color-primary-wash: #3B2417;
-
-    --color-accent-light: #3B2417;
-  }
-}
-
+.dark,
 [data-theme="dark"] {
   --color-background: #1C1917;
   --color-surface: #292524;
   --color-surface-secondary: #322E29;
   --color-surface-muted: #3B3630;
+
+  --color-popover: #292524;
+  --color-popover-foreground: #FAF9F7;
+  --color-muted: #322E29;
+  --color-muted-foreground: #A8A29E;
+  --color-input: #403A33;
+  --color-ring: #D96C3C;
 
   --color-border: #403A33;
   --color-border-light: #4C453D;
@@ -193,11 +188,41 @@ className="bg-green-800 text-red-500"
   --color-text-secondary: #D6D2CB;
   --color-text-muted: #A8A29E;
 
+  /* Brighter sienna for dark-mode brand fields; buttons keep the AA-safe #BE5428 */
   --color-primary: #D96C3C;
   --color-primary-hover: #E58354;
   --color-primary-wash: #3B2417;
 
   --color-accent-light: #3B2417;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not([data-theme="light"]) {
+    --color-background: #1C1917;
+    --color-surface: #292524;
+    --color-surface-secondary: #322E29;
+    --color-surface-muted: #3B3630;
+
+    --color-popover: #292524;
+    --color-popover-foreground: #FAF9F7;
+    --color-muted: #322E29;
+    --color-muted-foreground: #A8A29E;
+    --color-input: #403A33;
+    --color-ring: #D96C3C;
+
+    --color-border: #403A33;
+    --color-border-light: #4C453D;
+
+    --color-text-primary: #FAF9F7;
+    --color-text-secondary: #D6D2CB;
+    --color-text-muted: #A8A29E;
+
+    --color-primary: #D96C3C;
+    --color-primary-hover: #E58354;
+    --color-primary-wash: #3B2417;
+
+    --color-accent-light: #3B2417;
+  }
 }
 ```
 

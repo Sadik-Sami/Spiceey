@@ -1,18 +1,18 @@
-import { betterAuth } from 'better-auth';
-import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { db } from '@/db';
-import { env } from '@/env';
-import * as schema from '@/db/schema/users';
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { db } from "@/db";
+import { env } from "@/env";
+import * as schema from "@/db/schema/users";
 
 const googleConfigured = !!env.GOOGLE_CLIENT_ID && !!env.GOOGLE_CLIENT_SECRET;
 const trustedProxies =
-	env.TRUSTED_PROXIES?.split(',')
+	env.TRUSTED_PROXIES?.split(",")
 		.map((s) => s.trim())
 		.filter(Boolean) ?? [];
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
-		provider: 'pg',
+		provider: "pg",
 		schema: schema,
 	}),
 	secret: env.BETTER_AUTH_SECRET,
@@ -24,27 +24,27 @@ export const auth = betterAuth({
 	...(googleConfigured && {
 		socialProviders: {
 			google: {
-				prompt: 'select_account',
+				prompt: "select_account",
 				clientId: env.GOOGLE_CLIENT_ID!,
 				clientSecret: env.GOOGLE_CLIENT_SECRET!,
-				redirectURI: 'http://localhost:4000/api/auth/callback/google',
+				redirectURI: `${env.BETTER_AUTH_URL}/api/auth/callback/google`,
 			},
 		},
 	}),
 	user: {
 		additionalFields: {
-			phone: { type: 'string', required: false },
-			role: { type: 'string', defaultValue: 'customer', input: false },
+			phone: { type: "string", required: false },
+			role: { type: "string", defaultValue: "customer", input: false },
 		},
 	},
 	session: {
 		cookieCache: { enabled: true, maxAge: 5 * 60 },
 	},
 	advanced: {
-		database: { generateId: 'uuid' },
-		useSecureCookies: env.NODE_ENV === 'production',
+		database: { generateId: "uuid" },
+		useSecureCookies: env.NODE_ENV === "production",
 		ipAddress: {
-			ipAddressHeaders: ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'],
+			ipAddressHeaders: ["x-forwarded-for", "x-real-ip", "cf-connecting-ip"],
 			trustedProxies,
 		},
 	},

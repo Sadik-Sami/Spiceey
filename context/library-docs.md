@@ -176,19 +176,20 @@ The actual implemented config:
 ```typescript
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "../db/index.js";
-import { env } from "../env.js";
-import * as schema from "../db/schema/index.js";
+import { db } from "@/db";
+import { env } from "@/env";
+import * as schema from "@/db/schema/users";
+
+const googleConfigured = !!env.GOOGLE_CLIENT_ID && !!env.GOOGLE_CLIENT_SECRET;
+const trustedProxies =
+  env.TRUSTED_PROXIES?.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean) ?? [];
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
-    schema: {
-      user: schema.user,
-      session: schema.session,
-      account: schema.account,
-      verification: schema.verification,
-    },
+    schema: schema,
   }),
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
@@ -196,12 +197,13 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false,
   },
-  // Google OAuth only registered if both env vars are set
-  ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && {
+  ...(googleConfigured && {
     socialProviders: {
       google: {
-        clientId: env.GOOGLE_CLIENT_ID,
-        clientSecret: env.GOOGLE_CLIENT_SECRET,
+        prompt: "select_account",
+        clientId: env.GOOGLE_CLIENT_ID!,
+        clientSecret: env.GOOGLE_CLIENT_SECRET!,
+        redirectURI: `${env.BETTER_AUTH_URL}/api/auth/callback/google`,
       },
     },
   }),
@@ -217,7 +219,7 @@ export const auth = betterAuth({
     useSecureCookies: env.NODE_ENV === "production",
     ipAddress: {
       ipAddressHeaders: ["x-forwarded-for", "x-real-ip", "cf-connecting-ip"],
-      trustedProxies: env.TRUSTED_PROXIES?.split(",").map(s => s.trim()).filter(Boolean) ?? [],
+      trustedProxies,
     },
   },
   trustedOrigins: [env.CLIENT_URL],                     // explicit allowlist (more secure than disableOriginCheck)
@@ -242,7 +244,7 @@ pnpm dlx @better-auth/cli@latest generate \
 After regeneration, reconcile against architecture conventions:
 
 | Convention | CLI default | Architecture |
-|---|---|---|
+| --- | --- | --- |
 | Primary keys | `uuid("id")` + `pg_catalog.gen_random_uuid()` | keep ✓ |
 | Timestamps | `timestamp("...")` | `timestamp("...", { withTimezone: true })` (timestamptz) |
 | `user.email` | unique via `.unique()` | keep — convert to explicit `uniqueIndex("user_email_idx")` for naming consistency |
@@ -344,19 +346,30 @@ export function requireRole(roles: Array<User["role"]>) {
 // router.get("/admin/orders", authMiddleware, requireRole(["admin", "super_admin"]), getOrders);
 ```
 
-### Client Setup (later — frontend task)
+### Client Setup (`client/lib/auth-client.ts`)
 
 ```typescript
 // client/lib/auth-client.ts
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_SERVER_URL,
+  baseURL: process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:4000",
 });
 
-// Usage in Client Components:
-// const { data: session } = authClient.useSession();
-// const { signIn, signUp, signOut } = authClient;
+export const { signIn, signUp, signOut, useSession, getSession } = authClient;
+
+// Google Social Sign-In with dynamic client origin callback:
+export async function handleGoogleSignIn() {
+  const callbackURL =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/profile`
+      : "/profile";
+
+  await authClient.signIn.social({
+    provider: "google",
+    callbackURL,
+  });
+}
 ```
 
 **Rules:**
@@ -672,9 +685,11 @@ export function useAddToCart() {
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface CartItem {
+export interface CartItem {
   variantId: string;
+  productId?: string;
   productName: string;
+  productSlug?: string;
   weight: string;
   price: number;
   quantity: number;
@@ -714,13 +729,18 @@ export const useCartStore = create<CartState>()(
           items: state.items.filter((i) => i.variantId !== variantId),
         })),
       updateQuantity: (variantId, quantity) =>
-        set((state) => ({
-          items: quantity <= 0
-            ? state.items.filter((i) => i.variantId !== variantId)
-            : state.items.map((i) =>
-                i.variantId === variantId ? { ...i, quantity } : i
-              ),
-        })),
+        set((state) => {
+          if (quantity <= 0) {
+            return {
+              items: state.items.filter((i) => i.variantId !== variantId),
+            };
+          }
+          return {
+            items: state.items.map((i) =>
+              i.variantId === variantId ? { ...i, quantity } : i
+            ),
+          };
+        }),
       clearCart: () => set({ items: [] }),
       totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
       totalPrice: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
@@ -733,12 +753,26 @@ export const useCartStore = create<CartState>()(
 );
 ```
 
+**Hydration-Safe Reading Pattern (Navbar / Header Badges):**
+
+```typescript
+// Prevents React hydration mismatch on client-persisted store values
+const isMounted = React.useSyncExternalStore(
+  () => () => {},
+  () => true,
+  () => false,
+);
+const totalItems = useCartStore((state) => state.totalItems());
+const cartCount = isMounted ? totalItems : 0;
+```
+
 **Rules:**
 
 - Use Zustand for client-only state (cart UI state, wishlist, auth state cache)
 - Use TanStack Query for server state — never put server data in Zustand directly
 - Use `persist` middleware for cart (localStorage) to survive page refreshes
 - `partialize` to only persist the data, not the actions
+- Use `useSyncExternalStore` when reading persisted state across SSR boundaries to prevent hydration mismatch
 - Keep stores focused — one store per domain (cart, wishlist, UI state)
 
 ---
@@ -787,7 +821,7 @@ export function RichTextEditor({
           Italic
         </button>
       </div>
-      <EditorContent editor={editor} className="p-4 min-h-[200px]" />
+      <EditorContent editor={editor} className="p-4 min-h-50" />
     </div>
   );
 }
@@ -1102,10 +1136,10 @@ import { Input } from "@/components/ui/input";
 
 **Rules:**
 
-- Always add components via the shadcn CLI — never copy-paste from documentation
-- Components live in `client/components/ui/` — never modify them directly
-- Wrap shadcn primitives in custom components for project-specific styling
-- Use the built-in Tailwind CSS variables for theming
+- Components live in `client/components/ui/` built atop `@base-ui/react` primitives and `class-variance-authority` (cva)
+- Use the built-in Tailwind CSS variables for theming (`--color-popover`, `--color-muted`, `--color-input`, `--color-ring`, etc.)
+- For Dark Mode in Tailwind v4, declare `@custom-variant dark (&:where(.dark, .dark *));` in `globals.css` to enable class-based switching via `next-themes`
+- **Tailwind Canonical Classes Rule:** Always use standard Tailwind scale classes (`min-h-11` for 44px touch targets, `min-h-10`, `min-w-4`, `w-30`, `max-w-350`, etc.) instead of arbitrary bracket values (`min-h-[44px]`). Arbitrary brackets (`[...]`) are strictly prohibited unless non-scale.
 
 ---
 
@@ -1286,7 +1320,7 @@ export interface Review {
 All configuration is environment-driven. Never hardcode any key, URL, or secret.
 
 | Variable | Used In | Notes |
-|----------|---------|-------|
+| ---------- | --------- | ------- |
 | `DATABASE_URL` | server/db/index.ts | PostgreSQL connection string |
 | `BETTER_AUTH_SECRET` | server/auth/index.ts | Auth encryption key |
 | `BETTER_AUTH_URL` | server/auth/index.ts | Auth base URL |

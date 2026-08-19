@@ -5,7 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail, Phone, User } from "lucide-react";
+import {
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  Mail,
+  Phone,
+  User,
+} from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
@@ -55,18 +64,20 @@ export function RegisterForm() {
         {
           onError: (ctx) => {
             setAuthError(
-              ctx.error.message || "Registration failed. Please try again."
+              ctx.error.message || "Registration failed. Please try again.",
             );
           },
           onSuccess: () => {
             router.push("/profile");
             router.refresh();
           },
-        }
+        },
       );
 
       if (res.error) {
-        setAuthError(res.error.message || "Registration failed. Please try again.");
+        setAuthError(
+          res.error.message || "Registration failed. Please try again.",
+        );
       }
     } catch (err: unknown) {
       const message =
@@ -84,9 +95,14 @@ export function RegisterForm() {
     setAuthError(null);
 
     try {
+      const callbackURL =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/profile`
+          : "/profile";
+
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/profile",
+        callbackURL,
       });
     } catch (err: unknown) {
       const message =
@@ -106,7 +122,8 @@ export function RegisterForm() {
           Create your account
         </h1>
         <p className="text-sm text-text-secondary">
-          Join Spiceey for authentic homemade spices, pickles, and faster checkout.
+          Join Spiceey for authentic homemade spices, pickles, and faster
+          checkout.
         </p>
       </div>
 
@@ -147,10 +164,17 @@ export function RegisterForm() {
       </div>
 
       {/* Main Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5" noValidate>
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-3.5"
+        noValidate
+      >
         {/* Full Name */}
         <div className="space-y-1">
-          <Label htmlFor="name" className="text-text-primary font-medium text-sm">
+          <Label
+            htmlFor="name"
+            className="text-text-primary font-medium text-sm"
+          >
             Full Name
           </Label>
           <div className="relative">
@@ -184,7 +208,10 @@ export function RegisterForm() {
 
         {/* Email Field */}
         <div className="space-y-1">
-          <Label htmlFor="email" className="text-text-primary font-medium text-sm">
+          <Label
+            htmlFor="email"
+            className="text-text-primary font-medium text-sm"
+          >
             Email address
           </Label>
           <div className="relative">
@@ -219,8 +246,14 @@ export function RegisterForm() {
         {/* Phone Number Field */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <Label htmlFor="phone" className="text-text-primary font-medium text-sm">
-              Phone Number <span className="text-text-muted text-xs font-normal">(optional)</span>
+            <Label
+              htmlFor="phone"
+              className="text-text-primary font-medium text-sm"
+            >
+              Phone Number{" "}
+              <span className="text-text-muted text-xs font-normal">
+                (optional)
+              </span>
             </Label>
           </div>
           <div className="relative">
@@ -254,7 +287,10 @@ export function RegisterForm() {
 
         {/* Password Field */}
         <div className="space-y-1">
-          <Label htmlFor="password" className="text-text-primary font-medium text-sm">
+          <Label
+            htmlFor="password"
+            className="text-text-primary font-medium text-sm"
+          >
             Password
           </Label>
           <div className="relative">
@@ -300,7 +336,10 @@ export function RegisterForm() {
 
         {/* Confirm Password Field */}
         <div className="space-y-1">
-          <Label htmlFor="confirmPassword" className="text-text-primary font-medium text-sm">
+          <Label
+            htmlFor="confirmPassword"
+            className="text-text-primary font-medium text-sm"
+          >
             Confirm Password
           </Label>
           <div className="relative">
@@ -311,7 +350,9 @@ export function RegisterForm() {
               placeholder="Re-enter your password"
               autoComplete="new-password"
               className={`pl-9 pr-10 h-11 bg-surface text-text-primary border-border focus-visible:border-primary focus-visible:ring-primary/20 ${
-                errors.confirmPassword ? "border-error ring-2 ring-error/20" : ""
+                errors.confirmPassword
+                  ? "border-error ring-2 ring-error/20"
+                  : ""
               }`}
               {...register("confirmPassword")}
             />
@@ -319,7 +360,9 @@ export function RegisterForm() {
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded"
-              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              aria-label={
+                showConfirmPassword ? "Hide password" : "Show password"
+              }
             >
               {showConfirmPassword ? (
                 <EyeOff className="size-4" />
@@ -348,8 +391,16 @@ export function RegisterForm() {
         <motion.button
           type="submit"
           disabled={isLoading || isGoogleLoading}
-          whileHover={shouldReduceMotion || isLoading || isGoogleLoading ? undefined : { y: -1 }}
-          whileTap={shouldReduceMotion || isLoading || isGoogleLoading ? undefined : { scale: 0.98 }}
+          whileHover={
+            shouldReduceMotion || isLoading || isGoogleLoading
+              ? undefined
+              : { y: -1 }
+          }
+          whileTap={
+            shouldReduceMotion || isLoading || isGoogleLoading
+              ? undefined
+              : { scale: 0.98 }
+          }
           transition={MOTION.ease.spring}
           className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer mt-2"
         >

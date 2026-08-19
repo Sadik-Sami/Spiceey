@@ -7,7 +7,7 @@
 ## Technology Stack
 
 | Layer | Technology | Version | Purpose |
-|-------|-----------|---------|---------|
+| ------- | ----------- | --------- | --------- |
 | **Frontend Framework** | Next.js (App Router) | 16.2.6 | React framework, SSR, SEO |
 | **Frontend Language** | TypeScript | 5.6+ | Type safety |
 | **Styling** | Tailwind CSS | v4.1 | Utility-first CSS |
@@ -320,10 +320,41 @@ server/
 
 ---
 
+## Frontend Layout, Theming & Navigation Architecture
+
+### Root Layout Shell (`client/app/layout.tsx`)
+
+The Next.js 16 root layout establishes global styling, theming, font variables, and persistent navigation:
+
+- **Typography:** `Bricolage_Grotesque` (`--font-bricolage` for display headlines) and `Schibsted_Grotesk` (`--font-schibsted` for body text) configured with `display: "swap"`.
+- **Theming:** `ThemeProvider` from `next-themes` mounted at root with `attribute="class"`, `defaultTheme="light"`, `enableSystem`, and `disableTransitionOnChange`. HTML element includes `suppressHydrationWarning`.
+- **Navigation Shell:** Global `Navbar` (`client/components/layout/navbar.tsx`) mounted inside `ThemeProvider`. Auto-hides on auth routes (`/login`, `/register`) and admin dashboard (`/admin`).
+
+### Tailwind v4 Theming & Dark Mode
+
+- **Dark Variant Definition:** Configured with `@custom-variant dark (&:where(.dark, .dark *));` in `client/app/globals.css` to enable class-based dark styling in Tailwind v4.
+- **Semantic CSS Properties:** Standard CSS custom properties declared across light and dark modes:
+  - `--color-primary`, `--color-accent`: Burnt Sienna (`#BE5428` light / `#D96C3C` dark fields)
+  - `--color-background`, `--color-surface`, `--color-surface-secondary`, `--color-surface-muted`
+  - `--color-popover`, `--color-popover-foreground`
+  - `--color-muted`, `--color-muted-foreground`
+  - `--color-input`, `--color-ring`, `--color-border`
+- **Theme Toggle:** `ModeToggle` (`client/components/mode-toggle.tsx`) provides animated Sun/Moon icon transforms with Base UI `DropdownMenu` for Light/Dark/System switching.
+- **Tailwind Canonical Classes Standard:** Standard scale utilities (`min-h-11` for 44px touch targets, `min-h-10`, `min-w-4`, `w-30`, `max-w-350`, etc.) enforced across all components; arbitrary bracket classes (`[...]`) are strictly prohibited unless non-scale.
+
+### Navigation & Mobile Drawer
+
+- **Desktop Navigation:** Sticky header (`sticky top-0 z-40 bg-surface/80 backdrop-blur-xl border-b border-border`) with Motion spring active tab indicator (`layoutId="nav-active-indicator"`).
+- **Cart Counter Badge:** Synchronized with `useCartStore`, rendered safely across SSR boundaries using `useSyncExternalStore`.
+- **User Menu:** Base UI `DropdownMenu` with role-aware profile, orders, reviews, and admin dashboard links.
+- **Mobile Drawer (`client/components/layout/mobile-nav.tsx`):** Slide-up drawer using `AnimatePresence` + Motion with body scroll lock, Escape key dismissal, touch targets >=44px (`min-h-11`), and category filter shortcuts.
+
+---
+
 ## System Boundaries
 
 | Boundary | Rule |
-|----------|------|
+| ---------- | ------ |
 | `client/app/` | Pages, layouts, loading states, error boundaries. **No direct DB calls. No business logic.** Only `fetch()` to Express server. |
 | `client/components/` | UI only. No direct data fetching. Receive data via props. Call hooks that wrap `fetch()`. |
 | `client/lib/api-client.ts` | Centralized HTTP client (axios/fetch) pointing to Express server. Handles auth cookies automatically. |
@@ -413,7 +444,7 @@ Better Auth runs entirely on the Express server at `/api/auth/*`. The frontend n
 **Auth Endpoints (Express):**
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
+| -------- | ---------- | ------------- |
 | POST | `/api/auth/sign-up/email` | Email + password registration |
 | POST | `/api/auth/sign-in/email` | Email + password login |
 | POST | `/api/auth/sign-in/social` | Google OAuth initiation |
@@ -421,9 +452,16 @@ Better Auth runs entirely on the Express server at `/api/auth/*`. The frontend n
 | GET | `/api/auth/session` | Get current session (used by proxy.ts) |
 
 **Session Management:**
+
 - httpOnly, secure, sameSite=lax cookies
 - Session stored in PostgreSQL via Better Auth
 - Frontend reads auth state via `/api/auth/session` on page load
+
+**Social OAuth (Google):**
+
+- Initiated client-side via `authClient.signIn.social({ provider: "google", callbackURL })`
+- `callbackURL` dynamically derives client origin: `typeof window !== "undefined" ?`${window.location.origin}/profile`: "/profile"`
+- Server configures Google provider with `prompt: "select_account"` and dynamic `redirectURI:`${env.BETTER_AUTH_URL}/api/auth/callback/google``
 
 ### proxy.ts — Route Protection (Next.js 16)
 
@@ -492,13 +530,14 @@ export const config = {
 **Protected Routes:**
 
 | Route Pattern | Required Auth | Required Role |
-|---------------|--------------|---------------|
+| --------------- | -------------- | --------------- |
 | `/profile/*` | Authenticated | any |
 | `/wishlist` | Authenticated | any |
 | `/checkout` | Authenticated (or guest) | any |
 | `/admin/*` | Authenticated | `admin` or `super_admin` |
 
 **Guest Access (no auth required):**
+
 - Browse products, search, filter
 - View product details and reviews
 - Add to cart (stored in localStorage + server session)
@@ -539,7 +578,7 @@ Production:  https://api.spiceey.com/api
 ### Endpoint Summary
 
 | Resource | Endpoints | Auth |
-|----------|-----------|------|
+| ---------- | ----------- | ------ |
 | Auth | `POST /api/auth/*` | varies |
 | Products | `GET /api/products`, `GET /api/products/:slug`, `GET /api/products/featured`, `GET /api/products/best-sellers`, `POST /api/admin/products`, `PUT /api/admin/products/:id`, `PATCH /api/admin/products/:id/status` | public / admin |
 | Categories | `GET /api/categories` | public |
@@ -584,7 +623,7 @@ These rules override the table sketches below. The Drizzle implementation in `se
 ### Products
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | name | text | Product display name |
 | slug | text | URL-friendly identifier, unique |
@@ -607,7 +646,7 @@ These rules override the table sketches below. The Drizzle implementation in `se
 ### Product Images
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | productId | uuid | FK → products.id |
 | url | text | Cloudinary secure_url |
@@ -618,7 +657,7 @@ These rules override the table sketches below. The Drizzle implementation in `se
 ### Product Variants
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | productId | uuid | FK → products.id |
 | sku | text | Stock keeping unit, unique |
@@ -636,7 +675,7 @@ These rules override the table sketches below. The Drizzle implementation in `se
 ### Inventory Movements
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | variantId | uuid | FK → productVariants.id |
 | type | enum | 'addition' / 'deduction' / 'adjustment' / 'reservation' / 'release' |
@@ -651,7 +690,7 @@ These rules override the table sketches below. The Drizzle implementation in `se
 Categories are implemented as PostgreSQL enums with metadata:
 
 | Category | Description | Example Products |
-|----------|-------------|-----------------|
+| ---------- | ------------- | ----------------- |
 | `ground` | Hand-ground spice powders | Ginger Powder, Cumin Powder, Chilli Powder |
 | `whole` | Whole spices | Coriander Seeds, Cinnamon, Cardamom |
 | `mix` | Spice blends and masalas | Biriyani Masala, Beef Masala, Chicken Masala |
@@ -673,9 +712,15 @@ Custom fields are declared as `additionalFields` in the Better Auth config:
 ```ts
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "../db";
-import { env } from "../env";
-import * as schema from "../db/schema/users";
+import { db } from "@/db";
+import { env } from "@/env";
+import * as schema from "@/db/schema/users";
+
+const googleConfigured = !!env.GOOGLE_CLIENT_ID && !!env.GOOGLE_CLIENT_SECRET;
+const trustedProxies =
+  env.TRUSTED_PROXIES?.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean) ?? [];
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -684,13 +729,17 @@ export const auth = betterAuth({
   }),
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
-  emailAndPassword: { enabled: true, requireEmailVerification: false },
-  // Google OAuth only registered if both env vars are set
-  ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && {
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: false,
+  },
+  ...(googleConfigured && {
     socialProviders: {
       google: {
-        clientId: env.GOOGLE_CLIENT_ID,
-        clientSecret: env.GOOGLE_CLIENT_SECRET,
+        prompt: "select_account",
+        clientId: env.GOOGLE_CLIENT_ID!,
+        clientSecret: env.GOOGLE_CLIENT_SECRET!,
+        redirectURI: `${env.BETTER_AUTH_URL}/api/auth/callback/google`,
       },
     },
   }),
@@ -700,12 +749,18 @@ export const auth = betterAuth({
       role: { type: "string", defaultValue: "customer", input: false },
     },
   },
-  session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
-  advanced: {
-    database: { generateId: "uuid" },        // matches architecture's UUID convention
-    useSecureCookies: env.NODE_ENV === "production",
+  session: {
+    cookieCache: { enabled: true, maxAge: 5 * 60 },
   },
-  trustedOrigins: [env.CLIENT_URL],          // explicit allowlist (more secure than disableOriginCheck)
+  advanced: {
+    database: { generateId: "uuid" }, // matches architecture's UUID convention
+    useSecureCookies: env.NODE_ENV === "production",
+    ipAddress: {
+      ipAddressHeaders: ["x-forwarded-for", "x-real-ip", "cf-connecting-ip"],
+      trustedProxies,
+    },
+  },
+  trustedOrigins: [env.CLIENT_URL], // explicit allowlist (more secure than disableOriginCheck)
   rateLimit: { enabled: true },
 });
 
@@ -737,7 +792,7 @@ Both fields are optional — set by `auth.middleware.ts` (task 04) only when a v
 ### User Avatars
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | userId | uuid | FK → users.id |
 | url | text | Cloudinary secure_url |
@@ -747,7 +802,7 @@ Both fields are optional — set by `auth.middleware.ts` (task 04) only when a v
 ### Customers
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key, FK → users.id |
 | defaultAddress | jsonb | Canonical delivery address `{ district, upazila, area, addressLine, phone? }` — single source of truth |
 | createdAt | timestamp with time zone | Auto-generated |
@@ -760,7 +815,7 @@ Both fields are optional — set by `auth.middleware.ts` (task 04) only when a v
 ### Carts
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | userId | uuid | FK → users.id (nullable for guests) |
 | sessionId | text | Anonymous session identifier |
@@ -774,7 +829,7 @@ Both fields are optional — set by `auth.middleware.ts` (task 04) only when a v
 ### Wishlists
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | userId | uuid | FK → users.id |
 | productId | uuid | FK → products.id |
@@ -785,7 +840,7 @@ Both fields are optional — set by `auth.middleware.ts` (task 04) only when a v
 ### Orders
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | orderNumber | text | Human-readable order ID (e.g., SPY-20260115-001), unique |
 | customerId | uuid | FK → users.id (nullable for guests) |
@@ -814,7 +869,7 @@ Both fields are optional — set by `auth.middleware.ts` (task 04) only when a v
 ### Order Items
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | orderId | uuid | FK → orders.id |
 | variantId | uuid | FK → productVariants.id |
@@ -831,7 +886,7 @@ Both fields are optional — set by `auth.middleware.ts` (task 04) only when a v
 ### Order Status History
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | orderId | uuid | FK → orders.id |
 | status | enum | New status value |
@@ -845,7 +900,7 @@ Both fields are optional — set by `auth.middleware.ts` (task 04) only when a v
 ### Reviews
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | productId | uuid | FK → products.id |
 | customerId | uuid | FK → users.id |
@@ -863,7 +918,7 @@ Both fields are optional — set by `auth.middleware.ts` (task 04) only when a v
 ### Blogs
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | title | text | Blog post title |
 | slug | text | URL-friendly identifier |
@@ -885,7 +940,7 @@ Both fields are optional — set by `auth.middleware.ts` (task 04) only when a v
 Same schema as blogs with `type: 'story'` and additional fields:
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | type | enum | 'story' (distinguishes from blog) |
 | storyType | enum | 'sourcing' / 'preparation' / 'grinding' / 'packaging' / 'delivery' |
 | gallery | jsonb[] | Array of `{ url, publicId }` objects |
@@ -893,7 +948,7 @@ Same schema as blogs with `type: 'story'` and additional fields:
 ### Coupons
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | code | text | Unique coupon code |
 | type | enum | 'percentage' / 'fixed_amount' / 'free_shipping' |
@@ -912,7 +967,7 @@ Same schema as blogs with `type: 'story'` and additional fields:
 ### Announcements
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | message | text | Announcement text |
 | type | enum | 'info' / 'warning' / 'success' |
@@ -927,7 +982,7 @@ Same schema as blogs with `type: 'story'` and additional fields:
 ### Shipping Config
 
 | Column | Type | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | id | uuid | Primary key |
 | zone | enum | 'inside_dhaka' / 'outside_dhaka' / 'remote_area' (unique — one config per zone) |
 | baseCost | integer | Base shipping fee |
@@ -948,7 +1003,7 @@ Cancelled  Cancelled   Cancelled    Cancelled     Returned
 ```
 
 | Status | Description | Actor | Inventory Effect |
-|--------|-------------|-------|-----------------|
+| -------- | ------------- | ------- | ----------------- |
 | `pending` | Order placed, awaiting confirmation | System | Reserve stock |
 | `confirmed` | Order verified by admin | Admin | Keep reserved |
 | `packing` | Items being picked and packed | Admin | Keep reserved |
@@ -979,6 +1034,25 @@ Cancelled  Cancelled   Cancelled    Cancelled     Returned
 
 ## Cart & Wishlist Architecture
 
+### Client Cart Store & Hydration Safety
+
+Client-side cart state is managed via Zustand in `client/stores/cart-store.ts`:
+
+- **Persistence:** Uses `persist` middleware storing state under `spiceey-cart` in `localStorage`.
+- **State Interface:** `items: CartItem[]` with fields `{ variantId, productId?, productName, productSlug?, weight, price, quantity, image }`.
+- **Actions:** `addItem`, `removeItem`, `updateQuantity`, `clearCart`, `totalItems`, and `totalPrice`.
+- **Hydration Safety:** Because the cart store hydrates asynchronously from `localStorage`, reading the cart count in SSR/client boundary components (e.g. `Navbar`) uses `useSyncExternalStore` to guard against React hydration mismatches:
+
+```typescript
+const isMounted = React.useSyncExternalStore(
+  () => () => {},
+  () => true,
+  () => false,
+);
+const totalItems = useCartStore((state) => state.totalItems());
+const cartCount = isMounted ? totalItems : 0;
+```
+
 ### Guest Cart
 
 Guest carts use a dual-storage strategy for persistence across sessions:
@@ -997,6 +1071,7 @@ Server (PostgreSQL via sessionId cookie)
 ### Wishlist
 
 Wishlist requires authentication. Stored server-side only. Accessible from:
+
 - Product card (heart icon toggle)
 - Product detail page
 - Account profile section
@@ -1008,6 +1083,7 @@ Wishlist requires authentication. Stored server-side only. Accessible from:
 ### V1: Cash On Delivery (COD)
 
 COD is the sole payment method in Version 1. Implementation:
+
 - Order status remains `pending` until admin confirms
 - No online payment integration needed
 - Shipping label printed with COD amount
@@ -1069,7 +1145,7 @@ Server updates DB with new url + public_id
 ### Image Storage Rules
 
 | Entity | Stored Fields | Folder |
-|--------|--------------|--------|
+| -------- | -------------- | -------- |
 | Product images | `url`, `publicId` | `spiceey/products/` |
 | Blog cover image | `coverImageUrl`, `coverImagePublicId` | `spiceey/blogs/` |
 | Story gallery | `{ url, publicId }[]` | `spiceey/stories/` |
@@ -1082,7 +1158,7 @@ Server updates DB with new url + public_id
 ### Shipping Zones
 
 | Zone | Coverage | Base Cost | Free Shipping Threshold |
-|------|----------|-----------|------------------------|
+| ------ | ---------- | ----------- | ------------------------ |
 | Inside Dhaka | Dhaka city metro | ৳60 | ৳500 |
 | Outside Dhaka | Major cities (Chittagong, Sylhet, Rajshahi, etc.) | ৳120 | ৳800 |
 | Remote Area | Islands, hill tracts, border regions | ৳200 | ৳1,200 |
@@ -1092,6 +1168,7 @@ Server updates DB with new url + public_id
 > **Courier API integrations, webhook endpoints, and automated shipping status updates are explicitly out of scope.** The admin handles all courier interactions manually at the courier office.
 
 The following are **NOT included** in this architecture:
+
 - Pathao API integration (create order, track shipment, webhooks)
 - Steadfast API integration (place order, bulk create, status check, webhooks)
 - Sundarban API integration
@@ -1100,6 +1177,7 @@ The following are **NOT included** in this architecture:
 - Real-time delivery notifications from couriers
 
 What the admin dashboard **does** provide:
+
 - Manual tracking number entry field
 - Manual courier name entry
 - Manual tracking URL entry
@@ -1131,7 +1209,7 @@ Admin rejects → status: 'rejected' → hidden from customer too
 ### Review Visibility Rules
 
 | Viewer | Pending Reviews | Approved Reviews | Rejected Reviews |
-|--------|----------------|-----------------|------------------|
+| -------- | ---------------- | ----------------- | ------------------ |
 | Review author (owner) | Visible (muted styling) | Visible (normal) | Hidden |
 | Other customers | Hidden | Visible (normal) | Hidden |
 | Admin | Visible (all tabs) | Visible | Visible |
@@ -1199,6 +1277,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 ### Structured Data (JSON-LD)
 
 **Product Schema:**
+
 ```json
 {
   "@context": "https://schema.org",
@@ -1229,6 +1308,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 ### Stock Tracking Model
 
 Each variant maintains two quantity fields:
+
 - `quantity` — physical stock on hand
 - `reservedQuantity` — stock reserved for pending orders
 
@@ -1269,7 +1349,7 @@ Audit trail complete
 ### Inventory Movement Types
 
 | Type | Effect on Stock | When Used |
-|------|----------------|-----------|
+| ------ | ---------------- | ----------- |
 | `addition` | +quantity | Stock received, returned items |
 | `deduction` | -quantity | Damaged goods, shrinkage |
 | `adjustment` | Set to exact quantity | Count corrections |
@@ -1298,6 +1378,7 @@ Audit trail complete
 ### Manual Sync Points
 
 When the server schema changes, update these client types:
+
 - `client/types/index.ts` — API response shapes
 - Component props that receive API data
 - Form validation schemas (Zod) used client-side
@@ -1311,10 +1392,12 @@ When the server schema changes, update these client types:
 We use a modular Docker setup to separate local development concerns from production deployment:
 
 **Local Development (`server/docker-compose.yml`)**
+
 - Provides only the `db` (PostgreSQL 17) service.
 - Developers run `docker compose up -d` in `/server` to spin up the database, then run the client and server locally via `pnpm run dev`.
 
 **Central / Production (`/docker-compose.yml`)**
+
 - Orchestrates the full stack: `db` → `server` → `client`.
 - **Client (`client/Dockerfile`)**: Multi-stage build pulling the optimized `.next/standalone` output.
 - **Server (`server/Dockerfile`)**: Multi-stage build using `ghcr.io/pnpm/pnpm:11` as the base image. Leverages `pnpm fetch` for optimal layer caching of dependencies. The final stage executes `node dist/index.js` directly (avoiding the `pnpm` wrapper) to ensure proper `SIGTERM` handling and minimal footprint.
@@ -1324,7 +1407,7 @@ We use a modular Docker setup to separate local development concerns from produc
 All configuration is environment-driven. See `.env.example` for the complete list. Key variables include:
 
 | Variable | Purpose |
-|----------|---------|
+| ---------- | --------- |
 | `DATABASE_URL` | PostgreSQL connection string |
 | `BETTER_AUTH_SECRET` | Auth encryption key |
 | `BETTER_AUTH_URL` | Auth base URL |

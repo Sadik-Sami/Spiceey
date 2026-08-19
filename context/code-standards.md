@@ -52,6 +52,7 @@ The AI agent on this project operates as a senior engineer. This means:
 - Never use `useState` for continuous animation values (scroll, drag, hover) — use `useMotionValue`
 - Always check `useReducedMotion()` on any component with animations
 - Import animation constants from `@/lib/motion` — never hardcode easing or duration values
+- **Tailwind Canonical Classes:** Always use standard Tailwind scale classes (`min-h-11`, `h-11`, `w-11`, `min-w-4`, `min-w-24`, `w-30`, etc.) instead of arbitrary bracket values (`min-h-[44px]`). Arbitrary brackets (`[...]`) are strictly prohibited unless the size cannot be represented on the standard Tailwind scale (e.g. `min-h-[100dvh]`, `max-w-[1400px]`, `aspect-[4/5]`).
 
 ---
 
@@ -86,6 +87,7 @@ The AI agent on this project operates as a senior engineer. This means:
 We use a domain-driven Feature Module architecture for Express to ensure scalability. A module groups its DTOs, Controller, Service, and Routes.
 
 ### 1. DTOs with Zod (`modules/users/dto/users.dto.ts`)
+
 We use `drizzle-zod` to automatically infer schemas from the database when possible, then explicitly omit/pick fields for specific actions.
 
 ```typescript
@@ -255,7 +257,7 @@ async function uploadImage(file: File, folder: string) {
 All reviews are created with `status: 'pending'` by default.
 
 | Status | Visible To | Styling |
-|--------|-----------|---------|
+| -------- | ----------- | --------- |
 | `pending` | Review author only (isOwner) | Muted/gray text, "Pending approval" badge |
 | `approved` | Everyone | Normal styling |
 | `rejected` | No one (hidden from author too) | — |
@@ -285,7 +287,7 @@ All environment variables defined in `.env.example`. Never hardcode any key, URL
 **Server Environment:** In the backend, environment variables are managed and strictly validated using `@t3-oss/env-core` in `server/src/env.ts`. **Never use `process.env` directly in server files.** Always import the validated `env` object from `src/env.ts`.
 
 | Variable | Used In | Is Secret |
-|----------|---------|-----------|
+| ---------- | --------- | ----------- |
 | `DATABASE_URL` | server/db/index.ts | Yes |
 | `BETTER_AUTH_SECRET` | server/auth/index.ts | Yes |
 | `BETTER_AUTH_URL` | server/auth/index.ts | No |
@@ -343,7 +345,7 @@ Never install a new package without a clear reason. Before installing anything c
 **Approved dependencies for this project:**
 
 | Package | Purpose |
-|---------|---------|
+| --------- | --------- |
 | `next` | Next.js 16 framework |
 | `react` / `react-dom` | React 19 |
 | `typescript` | Type safety |
@@ -365,7 +367,7 @@ Do not install any other packages without updating this list first.
 
 ---
 
-## Mobile-First CSS
+## Mobile-First CSS & Canonical Utility Classes
 
 All styling is mobile-first:
 
@@ -380,4 +382,5 @@ All styling is mobile-first:
 - `lg:`: 1024px+
 - `xl:`: 1280px+
 
-Every page must be fully usable at 320px width (smallest common mobile width in Bangladesh).
+- Every page must be fully usable at 320px width (smallest common mobile width in Bangladesh).
+- Use canonical Tailwind scale classes (`min-h-11`, `min-w-11`, `h-11`, `w-11`, `min-h-10`, `w-30`) instead of arbitrary bracket values (`min-h-[44px]`, `w-[120px]`). Reserve `[...]` only for non-scale values.

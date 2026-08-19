@@ -22,20 +22,20 @@ export default function AuthLayout({
           </Link>
 
           {/* Spacer to keep logo centered or balanced */}
-          <div className="w-[120px] hidden sm:block" />
+          <div className="w-30 hidden sm:block" />
         </div>
       </header>
 
       {/* Main container */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-10">
-        <div className="w-full max-w-5xl">
-          {children}
-        </div>
+        <div className="w-full max-w-5xl">{children}</div>
       </main>
 
       {/* Minimal copyright footer */}
       <footer className="py-6 text-center text-xs text-text-muted border-t border-border/40">
-        <p>© {new Date().getFullYear()} Spiceey Bangladesh. All rights reserved.</p>
+        <p>
+          © {new Date().getFullYear()} Spiceey Bangladesh. All rights reserved.
+        </p>
       </footer>
     </div>
   );
